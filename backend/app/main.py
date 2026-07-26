@@ -11,7 +11,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    # This API is public, read-only, and sends no cookies/credentials --
+    # anyone can already read the same data straight from SEC EDGAR and
+    # Yahoo, so an open origin list has no meaningful downside here.
+    allow_origins=["*"],
     allow_methods=["GET"],
     allow_headers=["*"],
 )
