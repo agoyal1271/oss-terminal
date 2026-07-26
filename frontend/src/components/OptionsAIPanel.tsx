@@ -86,7 +86,13 @@ export function OptionsAIPanel({ chain, companyName }: { chain: OptionsChain; co
             <li>Install Ollama from <a href="https://ollama.com" target="_blank" rel="noreferrer">ollama.com</a>.</li>
             <li>Pull a model: <code>ollama pull llama3.2</code></li>
             <li>Make sure it's running, then try again.</li>
-            <li>CORS error in the console? Restart with <code>OLLAMA_ORIGINS=* ollama serve</code>.</li>
+            <li>Plain CORS error in the console? Set <code>OLLAMA_ORIGINS</code> to include this page's origin and restart Ollama.</li>
+            <li>
+              Loading this over HTTPS from a non-localhost URL? Chrome/Edge block that combination outright (
+              <a href="https://github.com/ollama/ollama/issues/7000" target="_blank" rel="noreferrer">open Ollama issue</a>
+              , no config fix exists yet) — Firefox and Safari work; running the frontend from <code>localhost</code>{" "}
+              also sidesteps it.
+            </li>
           </ol>
         </div>
       )}

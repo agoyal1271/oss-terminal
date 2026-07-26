@@ -169,17 +169,49 @@ quarter used is always the most recently completed one where the 45-day
 
 The AI read panel does not call any hosted AI API — the **browser** makes a
 direct client-side request to `http://localhost:11434` (Ollama's default
-port). Since Ollama runs on the same machine as the browser, this works even
-against the hosted deployment above: nothing about the prompt or the
-response ever reaches this project's backend or any third party.
+port). Since Ollama runs on the same machine as the browser, this is meant to
+work even against the hosted deployment above: nothing about the prompt or
+the response would reach this project's backend or any third party.
 
 To use it: install [Ollama](https://ollama.com), run `ollama pull llama3.2`
 (or any model you prefer), make sure Ollama is running, and click "Generate
-AI read." If the browser console shows a CORS error, restart Ollama with
-`OLLAMA_ORIGINS=* ollama serve` to allow requests from a web page.
+AI read."
 
-Two things worth knowing, both found by testing this against a real local
-model during development:
+### Running against the hosted deployment specifically: a real browser limitation
+
+Three things worth knowing, all found by testing this for real against a
+live local Ollama install and the actual hosted URL — not assumed:
+
+- **Plain CORS**: if Ollama rejects the request outright, set
+  `OLLAMA_ORIGINS` to include the page's origin (or `*` for any origin) and
+  restart Ollama. This is necessary but, for the hosted deployment, **not
+  sufficient** — see the next point.
+- **Chrome/Edge block it regardless of `OLLAMA_ORIGINS`, when the page is
+  loaded over HTTPS from a non-localhost origin** (e.g. the Vercel URL
+  above). This is a separate, newer browser security layer called Private
+  Network Access: a public-origin HTTPS page reaching a loopback address
+  (`localhost`) needs the *server* to respond with
+  `Access-Control-Allow-Private-Network: true` on top of normal CORS.
+  Confirmed live: a direct preflight test against a running Ollama instance
+  came back without that header even when Chrome's exact required headers
+  were sent. This is a currently-open upstream Ollama limitation
+  ([ollama/ollama#7000](https://github.com/ollama/ollama/issues/7000), open
+  since Ollama 0.3.12) — nothing in this app's code, and no Ollama *setting*,
+  can work around it until Ollama's server implements that response header.
+  `OLLAMA_ORIGINS=*` alone will look like it should work and won't.
+- **Firefox and Safari were checked directly and don't enforce it the same
+  way** (Playwright-driven Firefox and WebKit against the live hosted URL).
+  Mozilla is rolling out a similar Local Network Access policy through 2026,
+  but gated behind a one-time user permission prompt rather than a silent
+  block — expect a permission dialog on first use in a real (non-headless)
+  Firefox rather than an immediate failure. **The practical takeaway:** the
+  hosted deployment's AI panels work today in Firefox/Safari; in Chrome/Edge,
+  either wait for the upstream fix or run the frontend itself from
+  `localhost` (`npm run dev`), since a `localhost`-to-`localhost` request
+  isn't the public→private pattern this policy targets.
+
+Two more things worth knowing, both found by testing this against a real
+local model during development:
 
 - **Reasoning models can be much slower than you'd expect.** Models like
   Qwen3 run an extended "thinking" phase by default before producing a

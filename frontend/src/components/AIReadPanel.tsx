@@ -108,8 +108,19 @@ export function AIReadPanel({ ticker, companyName }: { ticker: string; companyNa
             <li>Pull a small model: <code>ollama pull llama3.2</code></li>
             <li>Make sure Ollama is running (it starts automatically after install, or run <code>ollama serve</code>).</li>
             <li>
-              If this fails with a CORS error in the browser console, Ollama is rejecting requests from this page's
-              origin — restart it with <code>OLLAMA_ORIGINS=* ollama serve</code> to allow browser access.
+              If the browser console shows a plain CORS error (not the Private Network one below), Ollama is
+              rejecting requests from this page's origin — set <code>OLLAMA_ORIGINS</code> to include it (or{" "}
+              <code>*</code> for any origin) and restart Ollama.
+            </li>
+            <li>
+              <strong>Loading this page over HTTPS from a non-localhost URL (like the hosted version of this app)?</strong>{" "}
+              Chrome and Edge block that combination outright with "No 'Access-Control-Allow-Private-Network' header
+              was present" — Ollama's server doesn't send that header yet (
+              <a href="https://github.com/ollama/ollama/issues/7000" target="_blank" rel="noreferrer">open upstream issue</a>
+              ), and no setting on this page or in Ollama's config can work around it. Verified: Firefox and Safari
+              don't enforce this the same way and should work; Chrome/Edge won't until Ollama ships a fix. Loading
+              this app from <code>localhost</code> (e.g. running the frontend locally) sidesteps it entirely, since
+              that's no longer a public-page-to-local-network request.
             </li>
           </ol>
         </div>
