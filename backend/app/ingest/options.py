@@ -184,7 +184,7 @@ def get_iv_term_structure(ticker: str, max_expirations: int = 8) -> dict:
     }
 
 
-def _closest_expiration_to_days(expiration_dates: list[int], target_days: int = 30) -> int | None:
+def closest_expiration_to_days(expiration_dates: list[int], target_days: int = 30) -> int | None:
     """Pick the expiration closest to `target_days` out, so day-over-day
     snapshots compare a roughly consistent tenor rather than jumping between
     a 1-day weekly and a 45-day monthly depending on what happened to be
@@ -200,7 +200,7 @@ def get_iv_snapshot(ticker: str, target_days: int = 30) -> dict:
     """Today's ATM IV at the expiration closest to `target_days` out -- the
     one data point the daily snapshot job records per ticker."""
     first = get_options_chain(ticker)
-    expiration = _closest_expiration_to_days(first["expiration_dates"], target_days)
+    expiration = closest_expiration_to_days(first["expiration_dates"], target_days)
     if expiration is None:
         raise ValueError(f"no expirations available for {ticker}")
     chain = first if expiration == first["selected_expiration"] else get_options_chain(ticker, expiration)

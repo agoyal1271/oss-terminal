@@ -1,0 +1,40 @@
+name: Daily unusual-activity scan
+
+on:
+  schedule:
+    # 20:45 UTC -- 15 minutes BEFORE iv-snapshot.yml's 21:00 UTC run, on
+    # purpose: this scan's IV-jump signal compares today's fresh IV against
+    # the LAST COMMITTED entry in data/iv-history/{ticker}.json. If this ran
+    # after iv-snapshot.yml, that "last entry" would already be today's,
+    # making every comparison trivially 1.0x. Running first keeps the
+    # comparison a real day-over-day diff.
+    - cron: "45 20 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run daily scan
+        env:
+          BACKEND_URL: https://backend-gules-iota-44.vercel.app
+          IV_SNAPSHOT_SECRET: ${{ secrets.IV_SNAPSHOT_SECRET }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: python scripts/scan_signals.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/scans/ data/scan-state/
+          git diff --cached --quiet || git commit -m "Daily scan $(date -u +%Y-%m-%d)"
+          git push

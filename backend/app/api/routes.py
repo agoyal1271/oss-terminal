@@ -11,6 +11,7 @@ from app.ingest import filings as filings_ingest
 from app.ingest import ownership as ownership_ingest
 from app.ingest import filing_content as filing_content_ingest
 from app.ingest import options as options_ingest
+from app.signals import detect as detect_signals
 
 router = APIRouter()
 
@@ -119,6 +120,19 @@ def internal_iv_snapshot(secret: str | None = None):
     if settings.iv_snapshot_secret and secret != settings.iv_snapshot_secret:
         raise HTTPException(status_code=403, detail="invalid or missing secret")
     return {"snapshots": options_ingest.get_watchlist_snapshot()}
+
+
+@router.get("/internal/scan/{ticker}")
+def internal_scan(ticker: str, secret: str | None = None):
+    """Called once daily by .github/workflows/daily-scan.yml, not by the
+    frontend. Per-ticker (not batch) so one bad ticker can't blow a whole
+    run's Vercel function timeout. Returns findings for TODAY plus the
+    state the caller should persist for tomorrow's diff -- see
+    app/signals/detect.py for the full transition logic."""
+    if settings.iv_snapshot_secret and secret != settings.iv_snapshot_secret:
+        raise HTTPException(status_code=403, detail="invalid or missing secret")
+    row = _resolve_or_404(ticker)
+    return detect_signals.scan_ticker(row["ticker"])
 
 
 @router.get("/filings/highlights")
