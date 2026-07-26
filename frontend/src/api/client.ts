@@ -70,8 +70,26 @@ export interface Filing {
   filing_date: string;
   report_date: string | null;
   accession_number: string;
+  items: string[];
   document_url: string | null;
   filing_index_url: string;
+}
+
+export interface FilingHighlights {
+  form: string;
+  risk_factors?: string | null;
+  mda?: string | null;
+  items?: { code: string; description: string }[];
+  excerpt?: string | null;
+  note?: string;
+}
+
+export interface OwnershipData {
+  ticker: string;
+  quarter_end: string;
+  holder_count_estimate: number;
+  sample_holders: string[];
+  method_note: string;
 }
 
 async function getJson<T>(path: string): Promise<T> {
@@ -91,5 +109,10 @@ export const api = {
   companyFilings: (ticker: string, limit = 15, forms?: string[]) => {
     const formsParam = forms && forms.length ? `&forms=${encodeURIComponent(forms.join(","))}` : "";
     return getJson<{ filings: Filing[] }>(`/companies/${ticker}/filings?limit=${limit}${formsParam}`);
+  },
+  companyOwnership: (ticker: string) => getJson<OwnershipData>(`/companies/${ticker}/ownership`),
+  filingHighlights: (documentUrl: string, form: string, items: string[]) => {
+    const itemsParam = items.length ? `&items=${encodeURIComponent(items.join(","))}` : "";
+    return getJson<FilingHighlights>(`/filings/highlights?url=${encodeURIComponent(documentUrl)}&form=${encodeURIComponent(form)}${itemsParam}`);
   },
 };

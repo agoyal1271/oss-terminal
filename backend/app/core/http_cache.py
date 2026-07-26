@@ -80,3 +80,34 @@ def cached_get_json(
 
     _write_cache(path, data)
     return data
+
+
+def cached_get_text(
+    namespace: str,
+    url: str,
+    ttl: int,
+    headers: dict[str, str] | None = None,
+    timeout: float = 20.0,
+) -> str:
+    """GET a URL and cache the raw response text on disk for `ttl` seconds."""
+    path = _cache_path(namespace, url)
+
+    cached = _read_cache(path, ttl)
+    if cached is not None:
+        return cached
+
+    try:
+        resp = httpx.get(url, headers=headers, timeout=timeout, follow_redirects=True)
+        resp.raise_for_status()
+        text = resp.text
+    except httpx.HTTPError as exc:
+        if path.exists():
+            try:
+                stale = json.loads(path.read_text())
+                return stale.get("data")
+            except (json.JSONDecodeError, OSError):
+                pass
+        raise UpstreamError(f"failed to fetch {url}: {exc}") from exc
+
+    _write_cache(path, text)
+    return text

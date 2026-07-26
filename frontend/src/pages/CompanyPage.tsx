@@ -6,6 +6,9 @@ import { RevenueChart } from "../components/RevenueChart";
 import { PriceChart } from "../components/PriceChart";
 import { FinancialsTable } from "../components/FinancialsTable";
 import { FilingsList, SUBSTANTIVE_FORMS } from "../components/FilingsList";
+import { TechnicalPanel } from "../components/TechnicalPanel";
+import { OwnershipPanel } from "../components/OwnershipPanel";
+import { AIReadPanel } from "../components/AIReadPanel";
 
 export function CompanyPage() {
   const { ticker = "" } = useParams();
@@ -100,14 +103,31 @@ export function CompanyPage() {
       </div>
 
       <div className="panel">
+        <h3>Technical read</h3>
+        <TechnicalPanel ticker={ticker} />
+      </div>
+
+      <div className="panel">
         <h3>Financial statements (annual, as reported)</h3>
         {financials && <FinancialsTable data={financials} />}
+      </div>
+
+      <div className="panel">
+        <h3>Institutional ownership</h3>
+        <OwnershipPanel ticker={ticker} />
       </div>
 
       <div className="panel">
         <h3>Recent SEC filings</h3>
         <FilingsList filings={filings} showAllFilings={showAllFilings} onToggleShowAll={toggleShowAll} />
       </div>
+
+      {profile && (
+        <div className="panel">
+          <h3>AI read (local LLM)</h3>
+          <AIReadPanel ticker={ticker} companyName={profile.name} />
+        </div>
+      )}
 
       <p className="disclaimer">
         All data sourced live from SEC EDGAR and Yahoo Finance. This is a research tool, not investment advice —

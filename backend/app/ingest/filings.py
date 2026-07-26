@@ -54,12 +54,14 @@ def get_recent_filings(cik_str: str, limit: int = 25, forms: list[str] | None = 
         accn = recent["accessionNumber"][i]
         accn_nodash = accn.replace("-", "")
         primary_doc = recent["primaryDocument"][i]
+        items = recent.get("items", [""] * n)[i]
         rows.append({
             "form": form,
             "filing_date": recent["filingDate"][i],
             "report_date": recent["reportDate"][i] if i < len(recent["reportDate"]) else None,
             "accession_number": accn,
             "primary_document": primary_doc,
+            "items": [x for x in items.split(",") if x] if items else [],
             "document_url": EDGAR_DOC_BASE.format(cik_int=cik_int, accn_nodash=accn_nodash, doc=primary_doc) if primary_doc else None,
             "filing_index_url": f"https://www.sec.gov/Archives/edgar/data/{cik_int}/{accn_nodash}/{accn}-index.htm",
         })

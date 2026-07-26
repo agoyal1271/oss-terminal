@@ -390,6 +390,220 @@
   color: var(--series-1);
 }
 
+.clickable-row {
+  cursor: pointer;
+}
+.clickable-row:hover {
+  background: var(--page-plane);
+}
+.expand-caret {
+  font-size: 11px;
+  color: var(--series-1);
+  white-space: nowrap;
+}
+.highlights-row td {
+  background: var(--page-plane);
+  padding: 16px !important;
+}
+.highlights-body h5 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+.highlight-block {
+  margin-bottom: 14px;
+}
+.highlight-block p {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  margin: 0;
+}
+.item-codes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+}
+.item-codes li {
+  padding: 2px 0;
+}
+.item-code {
+  font-weight: 700;
+  color: var(--series-1);
+  margin-right: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- ownership panel --- */
+.ownership-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ownership-headline {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ownership-count {
+  font-size: 36px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--series-1);
+}
+.ownership-count-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+.ownership-holders h5 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+.ownership-holders ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ownership-holders li {
+  font-size: 12px;
+  background: var(--page-plane);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 9px;
+  color: var(--text-secondary);
+}
+
+/* --- technical panel --- */
+.technical-checklist {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tech-row {
+  border-top: 1px solid var(--gridline);
+  padding-top: 10px;
+}
+.tech-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.tech-row-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+.tech-row p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.signal-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.signal-bullish {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 14%, transparent);
+}
+.signal-bearish {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+}
+.signal-neutral {
+  color: var(--text-muted);
+  background: var(--gridline);
+}
+
+/* --- AI read panel (local LLM) --- */
+.ai-read-intro {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 14px;
+}
+.ai-read-controls {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.ai-read-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.ai-read-controls input {
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--page-plane);
+  color: var(--text-primary);
+  min-width: 200px;
+}
+.primary-btn {
+  border: none;
+  background: var(--series-1);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.ai-read-output {
+  background: var(--page-plane);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.ai-read-setup code {
+  background: var(--page-plane);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+}
+.setup-steps {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  padding-left: 20px;
+  margin: 8px 0 0;
+}
+
 .disclaimer {
   font-size: 12px;
   color: var(--text-muted);

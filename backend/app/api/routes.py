@@ -7,6 +7,8 @@ from app.ingest import tickers as tickers_ingest
 from app.ingest import financials as financials_ingest
 from app.ingest import prices as prices_ingest
 from app.ingest import filings as filings_ingest
+from app.ingest import ownership as ownership_ingest
+from app.ingest import filing_content as filing_content_ingest
 
 router = APIRouter()
 
@@ -65,5 +67,26 @@ def company_filings(ticker: str, limit: int = 25, forms: str | None = None):
     form_list = [f.strip() for f in forms.split(",")] if forms else None
     try:
         return {"ticker": row["ticker"], "filings": filings_ingest.get_recent_filings(row["cik_str"], limit=limit, forms=form_list)}
+    except UpstreamError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+
+@router.get("/companies/{ticker}/ownership")
+def company_ownership(ticker: str):
+    row = _resolve_or_404(ticker)
+    try:
+        data = ownership_ingest.get_institutional_ownership(row["title"])
+    except UpstreamError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    return {"ticker": row["ticker"], **data}
+
+
+@router.get("/filings/highlights")
+def filing_highlights(url: str, form: str, items: str | None = None):
+    item_list = [x.strip() for x in items.split(",")] if items else []
+    try:
+        return filing_content_ingest.get_filing_highlights(url, form, item_list)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except UpstreamError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc

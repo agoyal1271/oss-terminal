@@ -18,6 +18,7 @@ RANGE_MAP = {
     "1m": ("1mo", "1d"),
     "6m": ("6mo", "1d"),
     "1y": ("1y", "1d"),
+    "2y": ("2y", "1d"),  # daily resolution, long enough to seed a 200-day SMA
     "5y": ("5y", "1wk"),
     "max": ("max", "1mo"),
 }
