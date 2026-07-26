@@ -1,0 +1,34 @@
+name: Daily IV snapshot
+
+on:
+  schedule:
+    # 21:00 UTC = 5pm EDT / 4pm EST -- after US market close either way of DST
+    - cron: "0 21 * * 1-5"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch and record today's IV snapshot
+        env:
+          BACKEND_URL: https://backend-gules-iota-44.vercel.app
+          IV_SNAPSHOT_SECRET: ${{ secrets.IV_SNAPSHOT_SECRET }}
+        run: python scripts/snapshot_iv.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/iv-history/
+          git diff --cached --quiet || git commit -m "Daily IV snapshot $(date -u +%Y-%m-%d)"
+          git push

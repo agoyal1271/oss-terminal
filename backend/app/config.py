@@ -28,6 +28,17 @@ class Settings(BaseSettings):
 
     fred_api_key: str | None = None
 
+    # Shared secret the daily GitHub Action snapshot job must present to
+    # /internal/iv-snapshot. If unset (local dev), the endpoint is open --
+    # set it in Vercel + as a GitHub Actions secret before relying on this
+    # in production.
+    iv_snapshot_secret: str | None = None
+
+    # Where the daily-committed IV history JSON files live -- read live from
+    # GitHub's raw content CDN rather than bundled into the deployment, so
+    # new data shows up without a redeploy.
+    iv_history_repo_raw_base: str = "https://raw.githubusercontent.com/agoyal1271/oss-terminal/main/data/iv-history"
+
     class Config:
         env_file = ".env"
 

@@ -6,6 +6,7 @@ import { OptionsChainTable } from "../components/OptionsChainTable";
 import { OptionsAIPanel } from "../components/OptionsAIPanel";
 import { IVTermStructureChart } from "../components/IVTermStructureChart";
 import { IVSkewChart } from "../components/IVSkewChart";
+import { IvRankTile } from "../components/IvRankTile";
 import { fmtPercent, fmtUsd } from "../format";
 
 function formatExpiration(unixSeconds: number): string {
@@ -111,6 +112,7 @@ export function OptionsPage() {
                   <div className="stat-label">Expected move (ATM straddle)</div>
                   <div className="stat-value">{s.expected_move_atm_straddle ? `± ${fmtUsd(s.expected_move_atm_straddle)}` : "—"}</div>
                 </div>
+                <IvRankTile ticker={ticker} />
               </div>
             )}
             <p className="source-note">

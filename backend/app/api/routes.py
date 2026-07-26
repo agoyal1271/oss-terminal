@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.config import settings
 from app.core.http_cache import UpstreamError
 from app.ingest import tickers as tickers_ingest
 from app.ingest import financials as financials_ingest
@@ -102,6 +103,22 @@ def company_options_term_structure(ticker: str, max_expirations: int = 8):
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/companies/{ticker}/options/iv-rank")
+def company_options_iv_rank(ticker: str):
+    row = _resolve_or_404(ticker)
+    return options_ingest.get_iv_rank(row["ticker"])
+
+
+@router.get("/internal/iv-snapshot")
+def internal_iv_snapshot(secret: str | None = None):
+    """Called once daily by .github/workflows/iv-snapshot.yml, not by the
+    frontend. Returns today's ATM IV for the tracked watchlist so the
+    Action can append it to data/iv-history/{ticker}.json."""
+    if settings.iv_snapshot_secret and secret != settings.iv_snapshot_secret:
+        raise HTTPException(status_code=403, detail="invalid or missing secret")
+    return {"snapshots": options_ingest.get_watchlist_snapshot()}
 
 
 @router.get("/filings/highlights")

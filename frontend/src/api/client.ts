@@ -142,6 +142,15 @@ export interface TermStructure {
   points: TermStructurePoint[];
 }
 
+export interface IvRank {
+  ticker: string;
+  history_days: number;
+  current_iv: number | null;
+  iv_rank: number | null;
+  iv_percentile: number | null;
+  note: string;
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) {
@@ -170,4 +179,5 @@ export const api = {
     return getJson<OptionsChain>(`/companies/${ticker}/options${param}`);
   },
   companyOptionsTermStructure: (ticker: string) => getJson<TermStructure>(`/companies/${ticker}/options/term-structure`),
+  companyOptionsIvRank: (ticker: string) => getJson<IvRank>(`/companies/${ticker}/options/iv-rank`),
 };

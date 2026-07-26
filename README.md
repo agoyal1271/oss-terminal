@@ -51,9 +51,12 @@ Search any US public company (10,400+ SEC filers) and get:
   (ATM straddle price — a standard trader's rule of thumb, not a forecast),
   an **IV term structure chart** (spot the market pricing in a known event),
   an **IV skew chart** (spot put-side hedging demand vs. call-side
-  speculation), and a chain table with a **liquidity (spread%) column** and a
-  **new-positioning flag** (volume exceeding open interest). Includes its own
-  local-LLM analysis panel. See "Options data" below.
+  speculation), an **IV rank tile** fed by a daily GitHub Action (accumulating
+  from zero — no free historical IV source exists to backfill from), and a
+  chain table with a **liquidity (spread%) column** and a **new-positioning
+  flag** (volume exceeding open interest). Its local-LLM analysis panel's
+  prompt includes the term structure and skew findings, not just ratios and
+  expected move. See "Options data" below.
 
 ## Architecture
 
@@ -186,6 +189,45 @@ Two more columns worth knowing the logic behind:
   interest — meaning most of today's activity is new positions being
   opened, not existing ones changing hands. That's the more meaningful
   "unusual activity" signal than raw volume alone.
+
+### IV rank / percentile — accumulating history, not faking it
+
+IV rank (where today's IV sits in its own trailing range) is the single most
+useful signal for deciding whether to be a structural buyer or seller of
+options premium — and it's the one thing on this screen that could *not* be
+built the same way as everything else, because **no free source of
+historical implied volatility exists for individual stocks**, from Yahoo or
+anyone else. Yahoo's options endpoint only returns a live snapshot; there's
+no historical-options equivalent of its price-chart endpoint. Real
+historical IV is genuinely paid commercial data (CBOE DataShop, ORATS,
+IVolatility.com all sell exactly this).
+
+The only way around that: **start capturing one data point a day, today**,
+and build the trailing window forward rather than pretending it already
+exists.
+
+- **`.github/workflows/iv-snapshot.yml`** runs on weekdays at 21:00 UTC
+  (after US market close either side of DST), calling
+  `GET /api/internal/iv-snapshot` on the deployed backend — protected by a
+  shared secret (`IV_SNAPSHOT_SECRET`, set identically as a Vercel env var
+  and a GitHub Actions secret; a request without it gets a 403, verified
+  live before relying on it).
+- That endpoint returns today's ATM IV, at the expiration closest to 30
+  calendar days out (a consistent tenor day-to-day, rather than "nearest,"
+  which would otherwise jump between a 1-day weekly and a 45-day monthly
+  depending on what happened to be nearest when the job ran), for a fixed
+  watchlist (`IV_WATCHLIST` in `app/ingest/options.py` — the same 8 tickers
+  as the homepage's "Popular" list; snapshotting the full 10,400-ticker
+  universe daily isn't realistic or polite to Yahoo's endpoint).
+- `scripts/snapshot_iv.py` calls that endpoint and appends the result to
+  `data/iv-history/{TICKER}.json`, which the Action commits back to the repo.
+- `get_iv_rank()` reads that file live from GitHub's raw content CDN
+  (`raw.githubusercontent.com`, cached 6h) — **not** bundled into the Vercel
+  deployment, so new daily data shows up without a redeploy.
+- The frontend's IV Rank tile reports exactly how many days of history exist
+  and shows "Collecting (day N)" until there's enough to compute a rank —
+  never a rank computed from 3 days of data presented as if it were the
+  traditional 52-week metric.
 
 ## Institutional ownership — how the count actually works
 
@@ -397,11 +439,11 @@ This is Phase 1 of the plan discussed. Later phases:
 - **Options Greeks.** Delta/gamma/theta/vega aren't in Yahoo's feed; computing
   them (standard Black-Scholes from strike, spot, IV, time-to-expiry, and a
   risk-free rate) is straightforward to add on top of the existing chain data.
-- **IV rank/percentile.** The single most useful volatility signal for
-  deciding buyer-vs-seller of premium — where today's IV sits in its own
-  trailing 52-week range — needs IV history stored over time, which doesn't
-  fit the on-demand architecture any better than exact 13F ownership does;
-  same Phase 2 datastore dependency.
+- ~~IV rank/percentile~~ — **built**, but starting from zero days of history
+  as of this writing. See "IV rank / percentile" above for the daily
+  GitHub Action that accumulates it going forward (no free historical IV
+  data source exists to backfill from) — check back in a few weeks for it
+  to become genuinely useful, and after ~90 days for a reasonable window.
 
 ## Legal/compliance notes
 
