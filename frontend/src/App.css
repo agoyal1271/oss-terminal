@@ -721,9 +721,28 @@
 .options-table .neg {
   color: var(--danger);
 }
+.options-table .wide-spread {
+  color: var(--danger);
+}
+.new-flag {
+  color: var(--series-1);
+  font-size: 9px;
+  vertical-align: middle;
+}
+
+/* --- analysis panels grid (term structure / skew) --- */
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.analysis-grid .panel {
+  margin-bottom: 0;
+}
 
 @media (max-width: 900px) {
   .options-stats { grid-template-columns: repeat(2, 1fr); }
+  .analysis-grid { grid-template-columns: 1fr; }
 }
 
 .disclaimer {

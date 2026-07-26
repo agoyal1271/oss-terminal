@@ -47,9 +47,13 @@ Search any US public company (10,400+ SEC filers) and get:
   table reveals exactly which reported GAAP tag each row's numbers came from.
 - **Options screen** (`/c/:ticker/options`) — the full calls/puts chain for
   any available expiration, with put/call volume and open-interest ratios,
-  ATM implied volatility, and the market-implied expected move by expiration
-  (ATM straddle price — a standard trader's rule of thumb, not a forecast).
-  Includes its own local-LLM analysis panel. See "Options data" below.
+  ATM implied volatility, the market-implied expected move by expiration
+  (ATM straddle price — a standard trader's rule of thumb, not a forecast),
+  an **IV term structure chart** (spot the market pricing in a known event),
+  an **IV skew chart** (spot put-side hedging demand vs. call-side
+  speculation), and a chain table with a **liquidity (spread%) column** and a
+  **new-positioning flag** (volume exceeding open interest). Includes its own
+  local-LLM analysis panel. See "Options data" below.
 
 ## Architecture
 
@@ -142,6 +146,46 @@ The **local-LLM analysis panel** on the options screen (`OptionsAIPanel`)
 reuses the same client-side Ollama integration as the company overview page
 (see "Local LLM" below) — same architecture, different prompt, built from
 the put/call ratios, ATM IV, expected move, and the highest-volume strikes.
+
+### IV term structure and skew charts
+
+Raw IV numbers aren't very actionable on their own — the two shapes that
+actually tell you something are already on the options screen:
+
+- **Term structure** (`GET /companies/{ticker}/options/term-structure`, drawn
+  by `IVTermStructureChart`) plots ATM IV across the next several
+  expirations. Yahoo's endpoint only returns one expiration's chain per
+  request, so this fans out across up to 8 expirations in parallel via a
+  thread pool (each individually disk-cached by `get_options_chain`, so
+  repeat calls are fast — measured ~0.6s cold in testing). Normal shape
+  slopes upward; a near-term spike that falls back for later expirations
+  (backwardation) means the market is pricing a specific event — earnings, an
+  FDA date — into that expiration, not a smooth increase in uncertainty over
+  time. The chart auto-detects that shape and calls it out in a caption.
+- **Skew** (`IVSkewChart`) plots IV across strikes for the *currently
+  selected* expiration — no extra backend call, it reads the chain already
+  fetched for the table below it. Deliberately windowed to strikes within
+  ±20% of the underlying price: a single thinly-traded far-OTM strike with a
+  noisy 200%+ IV was enough to flatten the entire near-the-money curve into
+  an unreadable line at the bottom of the chart during testing. Rising IV
+  toward lower (put) strikes is normal equity skew; flattening or inverting
+  toward the call side is the speculative-chasing pattern.
+
+### Chain table: spread and new-positioning signals
+
+Two more columns worth knowing the logic behind:
+
+- **Spread** is bid-ask spread as a percentage of mid price, not the raw
+  dollar spread — a $3.80 spread on a $118 deep-ITM contract is a tight 3%,
+  while the same $3.80 on a $10 contract would be brutal. Flagged red above
+  15% (a common rule-of-thumb "hard to trade cleanly" cutoff). Contracts with
+  **no bid at all** (not just a wide one) show "—" rather than a fabricated
+  100% figure — a no-bid contract and a wide-but-real market are different
+  liquidity situations and are shown differently.
+- **The small dot next to Volume** flags contracts where volume exceeds open
+  interest — meaning most of today's activity is new positions being
+  opened, not existing ones changing hands. That's the more meaningful
+  "unusual activity" signal than raw volume alone.
 
 ## Institutional ownership — how the count actually works
 
@@ -353,9 +397,11 @@ This is Phase 1 of the plan discussed. Later phases:
 - **Options Greeks.** Delta/gamma/theta/vega aren't in Yahoo's feed; computing
   them (standard Black-Scholes from strike, spot, IV, time-to-expiry, and a
   risk-free rate) is straightforward to add on top of the existing chain data.
-- **Volatility term structure and skew charts.** The chain endpoint already
-  returns every expiration; charting IV across expirations (term structure)
-  and across strikes for one expiration (skew) just needs a UI, not new data.
+- **IV rank/percentile.** The single most useful volatility signal for
+  deciding buyer-vs-seller of premium — where today's IV sits in its own
+  trailing 52-week range — needs IV history stored over time, which doesn't
+  fit the on-demand architecture any better than exact 13F ownership does;
+  same Phase 2 datastore dependency.
 
 ## Legal/compliance notes
 

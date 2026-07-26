@@ -10,9 +10,11 @@ expired).
 
 from __future__ import annotations
 
+import concurrent.futures
+
 import httpx
 
-from app.core.http_cache import cached_call_json
+from app.core.http_cache import UpstreamError, cached_call_json
 
 OPTIONS_URL = "https://query1.finance.yahoo.com/v7/finance/options/{symbol}"
 CRUMB_URL = "https://query1.finance.yahoo.com/v1/test/getcrumb"
@@ -127,4 +129,47 @@ def get_options_chain(ticker: str, expiration: int | None = None) -> dict:
             "atm_put_iv": atm_put["implied_volatility"] if atm_put else None,
             "expected_move_atm_straddle": expected_move,
         },
+    }
+
+
+def get_iv_term_structure(ticker: str, max_expirations: int = 8) -> dict:
+    """ATM implied volatility across the next several expirations.
+
+    Normal shape slopes upward (further out = more time value/uncertainty).
+    A front-month spike above the back months (backwardation) is the
+    reliable, free signal that the market is pricing a known event -- an
+    earnings date, an FDA decision -- into that specific expiration.
+
+    Yahoo's options endpoint only returns one expiration's chain per
+    request, so this fans out across several expirations in parallel
+    (each individually disk-cached by get_options_chain, so repeat calls
+    are fast) rather than one big request.
+    """
+    first = get_options_chain(ticker)
+    expirations = first["expiration_dates"][:max_expirations]
+
+    def fetch_one(exp: int) -> dict | None:
+        try:
+            chain = first if exp == first["selected_expiration"] else get_options_chain(ticker, exp)
+        except (UpstreamError, ValueError):
+            return None
+        s = chain["summary"]
+        if s["atm_call_iv"] is None and s["atm_put_iv"] is None:
+            return None
+        return {
+            "expiration": chain["selected_expiration"],
+            "atm_strike": s["atm_strike"],
+            "call_iv": s["atm_call_iv"],
+            "put_iv": s["atm_put_iv"],
+        }
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+        results = list(pool.map(fetch_one, expirations))
+
+    points = sorted((p for p in results if p is not None), key=lambda p: p["expiration"])
+
+    return {
+        "symbol": first["symbol"],
+        "underlying_price": first["underlying_price"],
+        "points": points,
     }

@@ -4,6 +4,8 @@ import { api, type CompanyProfile, type OptionsChain } from "../api/client";
 import { CompanyHeader } from "../components/CompanyHeader";
 import { OptionsChainTable } from "../components/OptionsChainTable";
 import { OptionsAIPanel } from "../components/OptionsAIPanel";
+import { IVTermStructureChart } from "../components/IVTermStructureChart";
+import { IVSkewChart } from "../components/IVSkewChart";
 import { fmtPercent, fmtUsd } from "../format";
 
 function formatExpiration(unixSeconds: number): string {
@@ -115,6 +117,17 @@ export function OptionsPage() {
               Source: Yahoo Finance (unofficial, delayed). Expected move is the at-the-money call + put price, a
               standard trader's rule-of-thumb for the market-implied move by expiration — not a prediction.
             </p>
+          </div>
+
+          <div className="analysis-grid">
+            <div className="panel">
+              <h3>IV term structure</h3>
+              <IVTermStructureChart ticker={ticker} />
+            </div>
+            <div className="panel">
+              <h3>IV skew ({formatExpiration(chain.selected_expiration)})</h3>
+              <IVSkewChart chain={chain} />
+            </div>
           </div>
 
           <div className="panel">

@@ -93,6 +93,17 @@ def company_options(ticker: str, expiration: int | None = None):
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
+@router.get("/companies/{ticker}/options/term-structure")
+def company_options_term_structure(ticker: str, max_expirations: int = 8):
+    row = _resolve_or_404(ticker)
+    try:
+        return options_ingest.get_iv_term_structure(row["ticker"], max_expirations=max_expirations)
+    except UpstreamError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
 @router.get("/filings/highlights")
 def filing_highlights(url: str, form: str, items: str | None = None):
     item_list = [x.strip() for x in items.split(",")] if items else []

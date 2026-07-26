@@ -129,6 +129,19 @@ export interface OptionsChain {
   summary: OptionsSummary;
 }
 
+export interface TermStructurePoint {
+  expiration: number;
+  atm_strike: number | null;
+  call_iv: number | null;
+  put_iv: number | null;
+}
+
+export interface TermStructure {
+  symbol: string;
+  underlying_price: number | null;
+  points: TermStructurePoint[];
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) {
@@ -156,4 +169,5 @@ export const api = {
     const param = expiration ? `?expiration=${expiration}` : "";
     return getJson<OptionsChain>(`/companies/${ticker}/options${param}`);
   },
+  companyOptionsTermStructure: (ticker: string) => getJson<TermStructure>(`/companies/${ticker}/options/term-structure`),
 };
