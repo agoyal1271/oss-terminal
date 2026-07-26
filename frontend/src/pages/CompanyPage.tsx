@@ -9,6 +9,7 @@ import { FilingsList, SUBSTANTIVE_FORMS } from "../components/FilingsList";
 import { TechnicalPanel } from "../components/TechnicalPanel";
 import { OwnershipPanel } from "../components/OwnershipPanel";
 import { AIReadPanel } from "../components/AIReadPanel";
+import { CompanyHeader } from "../components/CompanyHeader";
 
 export function CompanyPage() {
   const { ticker = "" } = useParams();
@@ -66,26 +67,7 @@ export function CompanyPage() {
 
   return (
     <div className="page-content">
-      {profile && (
-        <div className="company-header">
-          <div>
-            <h1>
-              {profile.name} <span className="ticker-pill">{profile.ticker}</span>
-            </h1>
-            <div className="company-meta">
-              {profile.sic_description} · {profile.exchanges.join(", ") || "OTC/unlisted"} · CIK {profile.cik}
-            </div>
-          </div>
-          <a
-            className="edgar-link"
-            href={`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${profile.cik}&type=&dateb=&owner=include&count=40`}
-            target="_blank"
-            rel="noreferrer"
-          >
-            All filings on EDGAR ↗
-          </a>
-        </div>
-      )}
+      <CompanyHeader profile={profile} ticker={ticker} active="overview" />
 
       <KeyStats latest={latest} prices={prices} />
 

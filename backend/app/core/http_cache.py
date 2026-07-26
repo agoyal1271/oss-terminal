@@ -13,7 +13,7 @@ import hashlib
 import json
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import httpx
 
@@ -111,3 +111,29 @@ def cached_get_text(
 
     _write_cache(path, text)
     return text
+
+
+def cached_call_json(namespace: str, key: str, ttl: int, fetch_fn: Callable[[], Any]) -> Any:
+    """Cache the result of an arbitrary fetch callable, for sources (like
+    Yahoo's options endpoint) that need custom auth/retry logic beyond a
+    plain GET -- `fetch_fn` does its own HTTP work and returns JSON-ready data.
+    """
+    path = _cache_path(namespace, key)
+
+    cached = _read_cache(path, ttl)
+    if cached is not None:
+        return cached
+
+    try:
+        data = fetch_fn()
+    except httpx.HTTPError as exc:
+        if path.exists():
+            try:
+                stale = json.loads(path.read_text())
+                return stale.get("data")
+            except (json.JSONDecodeError, OSError):
+                pass
+        raise UpstreamError(f"failed to fetch {key}: {exc}") from exc
+
+    _write_cache(path, data)
+    return data

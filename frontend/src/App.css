@@ -604,6 +604,113 @@
   margin: 8px 0 0;
 }
 
+/* --- screen tabs (Overview / Options) --- */
+.screen-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.screen-tabs a {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.screen-tabs a.active {
+  color: var(--series-1);
+  border-bottom-color: var(--series-1);
+}
+
+/* --- options screen --- */
+.options-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.options-underlying {
+  font-size: 22px;
+  font-weight: 700;
+}
+.options-underlying-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+.expiration-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.expiration-select select {
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  text-transform: none;
+  letter-spacing: normal;
+}
+.options-stats {
+  grid-template-columns: repeat(5, 1fr);
+}
+.options-chain-block {
+  margin-bottom: 24px;
+}
+.options-chain-block h5 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+.options-table {
+  font-size: 13px;
+}
+.options-table th, .options-table td {
+  padding: 6px 12px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--gridline);
+}
+.options-table th:first-child, .options-table td:first-child {
+  text-align: left;
+}
+.strike-cell {
+  font-weight: 600;
+}
+.options-table tr.itm-row {
+  background: color-mix(in srgb, var(--series-1) 6%, transparent);
+}
+.options-table tr.atm-row .strike-cell {
+  color: var(--series-1);
+}
+.options-table tr.atm-row {
+  border-top: 1px solid var(--series-1);
+  border-bottom: 1px solid var(--series-1);
+}
+.options-table .pos {
+  color: var(--success);
+}
+.options-table .neg {
+  color: var(--danger);
+}
+
+@media (max-width: 900px) {
+  .options-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
 .disclaimer {
   font-size: 12px;
   color: var(--text-muted);

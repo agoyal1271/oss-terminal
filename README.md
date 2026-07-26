@@ -45,6 +45,11 @@ Search any US public company (10,400+ SEC filers) and get:
   Form 4, beneficial ownership) with a toggle to see everything.
 - **Source transparency** — a "show XBRL source tags" toggle on the financials
   table reveals exactly which reported GAAP tag each row's numbers came from.
+- **Options screen** (`/c/:ticker/options`) — the full calls/puts chain for
+  any available expiration, with put/call volume and open-interest ratios,
+  ATM implied volatility, and the market-implied expected move by expiration
+  (ATM straddle price — a standard trader's rule of thumb, not a forecast).
+  Includes its own local-LLM analysis panel. See "Options data" below.
 
 ## Architecture
 
@@ -88,6 +93,9 @@ screening yet (that's Phase 2, see below).
   approach picked up boilerplate instead of the actual announcement.
 - `app/ingest/ownership.py` — institutional ownership via SEC full-text
   search (see "Institutional ownership" below).
+- `app/ingest/options.py` — options chain via Yahoo, including the
+  session-cookie/crumb handshake that endpoint requires (see "Options data"
+  below).
 - `app/ingest/tickers.py` — SEC's own ticker↔CIK mapping (search index).
 
 ## Data sources — what's used and why
@@ -98,11 +106,42 @@ screening yet (that's Phase 2, see below).
 | Filings list, SIC/exchange | [SEC submissions API](https://www.sec.gov/os/webmaster-faq#developers) | Official, free, no key. |
 | Ticker↔CIK search index | [SEC company_tickers.json](https://www.sec.gov/files/company_tickers.json) | Official, free, no key. ~10,400 entities. |
 | Prices | Yahoo Finance unofficial chart endpoint | **No key, but unofficial** — same endpoint the `yfinance` library uses. No published rate limit or SLA; Yahoo could change or block it. Delayed, not a licensed real-time feed. See "Known limitations." |
+| Options chains | Yahoo Finance unofficial options endpoint | Same caveats as prices, plus its own session/crumb requirement — see "Options data" below. |
 
 **Dropped during build:** Stooq was in the original plan for prices but now
 requires solving a JavaScript proof-of-work challenge to access
 programmatically — not scriptable without a headless browser, so it was
 replaced with Yahoo's endpoint.
+
+## Options data
+
+`app/ingest/options.py` pulls the full calls/puts chain per expiration from
+Yahoo's unofficial options endpoint. Unlike the price-chart endpoint, this
+one enforces a session cookie plus a CSRF "crumb" token — a two-step
+handshake (seed a cookie at `fc.yahoo.com`, then fetch a crumb) done once per
+backend process and reused, with an automatic refetch-and-retry if a request
+comes back 401 (the crumb/cookie pair expires). Found and worked around
+during development after the plain chart-endpoint approach returned
+`"Invalid Crumb"` on every options request.
+
+Two computed fields are worth knowing the exact definition of, since neither
+is a raw Yahoo field:
+
+- **Put/call ratios** (volume and open interest) are summed across every
+  strike at the selected expiration — a widely used, if blunt, sentiment
+  gauge. A single expiration's ratio can be noisy; it's not a term-structure
+  view across all expirations.
+- **Expected move** is the at-the-money call price + at-the-money put price
+  (the ATM straddle cost) — a standard options-trader heuristic for the
+  market-implied move by expiration, *not* a statistical prediction. It
+  assumes the straddle is roughly fairly priced, which can break down around
+  known binary events (earnings, FDA decisions) where implied vol is
+  elevated specifically because the move is expected to be large.
+
+The **local-LLM analysis panel** on the options screen (`OptionsAIPanel`)
+reuses the same client-side Ollama integration as the company overview page
+(see "Local LLM" below) — same architecture, different prompt, built from
+the put/call ratios, ATM IV, expected move, and the highest-volume strikes.
 
 ## Institutional ownership — how the count actually works
 
@@ -198,6 +237,10 @@ model during development:
   Yahoo's daily price history — treat "bullish"/"bearish" labels as a
   description of current chart structure, not a forecast, and pair them with
   the fundamentals above rather than trading on them alone.
+- **Options chain has no Greeks beyond implied volatility.** Yahoo's feed
+  doesn't include delta/gamma/theta/vega, only IV, so none are shown or
+  fabricated. Options quotes are delayed, same as the price feed — not
+  suitable for placing trades against, only for reading market structure.
 
 ## Known limitations
 
@@ -257,6 +300,12 @@ This is Phase 1 of the plan discussed. Later phases:
   matched by CUSIP — part of the Phase 2 datastore work.
 - **Form 4 transaction parsing.** Individual insider buy/sell transactions
   (shares, price, date, insider role), not just a link to the filing.
+- **Options Greeks.** Delta/gamma/theta/vega aren't in Yahoo's feed; computing
+  them (standard Black-Scholes from strike, spot, IV, time-to-expiry, and a
+  risk-free rate) is straightforward to add on top of the existing chain data.
+- **Volatility term structure and skew charts.** The chain endpoint already
+  returns every expiration; charting IV across expirations (term structure)
+  and across strikes for one expiration (skew) just needs a UI, not new data.
 
 ## Legal/compliance notes
 

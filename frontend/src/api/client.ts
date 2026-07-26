@@ -92,6 +92,43 @@ export interface OwnershipData {
   method_note: string;
 }
 
+export interface OptionContract {
+  contract_symbol: string;
+  strike: number;
+  last_price: number | null;
+  bid: number | null;
+  ask: number | null;
+  change: number | null;
+  percent_change: number | null;
+  volume: number;
+  open_interest: number;
+  implied_volatility: number | null;
+  in_the_money: boolean;
+}
+
+export interface OptionsSummary {
+  call_volume: number;
+  put_volume: number;
+  call_open_interest: number;
+  put_open_interest: number;
+  put_call_volume_ratio: number | null;
+  put_call_oi_ratio: number | null;
+  atm_strike: number | null;
+  atm_call_iv: number | null;
+  atm_put_iv: number | null;
+  expected_move_atm_straddle: number | null;
+}
+
+export interface OptionsChain {
+  symbol: string;
+  underlying_price: number | null;
+  expiration_dates: number[];
+  selected_expiration: number;
+  calls: OptionContract[];
+  puts: OptionContract[];
+  summary: OptionsSummary;
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`);
   if (!res.ok) {
@@ -114,5 +151,9 @@ export const api = {
   filingHighlights: (documentUrl: string, form: string, items: string[]) => {
     const itemsParam = items.length ? `&items=${encodeURIComponent(items.join(","))}` : "";
     return getJson<FilingHighlights>(`/filings/highlights?url=${encodeURIComponent(documentUrl)}&form=${encodeURIComponent(form)}${itemsParam}`);
+  },
+  companyOptions: (ticker: string, expiration?: number) => {
+    const param = expiration ? `?expiration=${expiration}` : "";
+    return getJson<OptionsChain>(`/companies/${ticker}/options${param}`);
   },
 };

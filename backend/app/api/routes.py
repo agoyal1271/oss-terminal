@@ -9,6 +9,7 @@ from app.ingest import prices as prices_ingest
 from app.ingest import filings as filings_ingest
 from app.ingest import ownership as ownership_ingest
 from app.ingest import filing_content as filing_content_ingest
+from app.ingest import options as options_ingest
 
 router = APIRouter()
 
@@ -79,6 +80,17 @@ def company_ownership(ticker: str):
     except UpstreamError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     return {"ticker": row["ticker"], **data}
+
+
+@router.get("/companies/{ticker}/options")
+def company_options(ticker: str, expiration: int | None = None):
+    row = _resolve_or_404(ticker)
+    try:
+        return options_ingest.get_options_chain(row["ticker"], expiration)
+    except UpstreamError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/filings/highlights")
