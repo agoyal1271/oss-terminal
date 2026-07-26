@@ -210,21 +210,39 @@ live local Ollama install and the actual hosted URL — not assumed:
   `localhost` (`npm run dev`), since a `localhost`-to-`localhost` request
   isn't the public→private pattern this policy targets.
 
-Two more things worth knowing, both found by testing this against a real
-local model during development:
+More things worth knowing, all found by testing this against a real local
+model during development:
 
-- **Reasoning models can be much slower than you'd expect.** Models like
-  Qwen3 run an extended "thinking" phase by default before producing a
-  visible answer — a 36B quantized model took over two minutes for a ~300
-  word synthesis on CPU-only hardware in testing. The request sets
-  `"think": false` to skip that phase (ignored harmlessly by models that
-  don't support it), and the client timeout is set to 5 minutes rather than
-  guessing a "reasonable" cap, since local inference speed varies enormously
-  by hardware.
-- The panel builds its prompt from data already fetched for the page
-  (latest fiscal year financials, the technical read, ownership count) and
-  explicitly instructs the model not to give buy/sell advice — only to
-  describe what the data shows.
+- **Reasoning models can be much slower than you'd expect, and a fixed
+  timeout isn't enough on its own.** Models like Qwen3 run an extended
+  "thinking" phase by default before producing a visible answer. The request
+  sets `"think": false` to skip that phase (ignored harmlessly by models
+  that don't support it) and caps output at `num_predict: 400` so a rambling
+  model can't run indefinitely regardless of hardware speed. Even so, a 36B
+  model on CPU-only hardware genuinely needed more than 5 minutes for one
+  synthesis in testing — the client timeout is set to 10 minutes as a
+  backstop, not because that's a "good" wait, but because failing a request
+  that was actually still working correctly is worse than a long wait with a
+  visible "still running" message.
+- **If your only pulled model is large, generation will be slow no matter
+  what this app does** — that's a hardware/model-size reality, not a bug.
+  `ollama pull llama3.2` (≈2GB) instead of a 30B+ model makes an enormous
+  difference in responsiveness for this kind of short synthesis.
+- **Embedding models are filtered out of the model list automatically**
+  (anything with "embed" or "bert" in its name/family) — `/api/tags` returns
+  every pulled model including embedding-only ones like `nomic-embed-text`,
+  which can't generate text and would otherwise silently get selected as the
+  "first available model."
+- **"Copy prompt" + "Open Gemini" buttons are the pressure-release valve.**
+  If the local model is too slow or unavailable, both AI panels let you copy
+  the exact same prompt to the clipboard and run it against a hosted model
+  instead — no local-LLM dependency required, at the cost of that prompt
+  (financials, technicals, or options data) actually leaving your machine
+  this time, unlike the local path.
+- The panels build their prompt from data already fetched for the page
+  (latest fiscal year financials, the technical read, ownership count, or
+  the options chain summary) and explicitly instruct the model not to give
+  buy/sell advice — only to describe what the data shows.
 
 ## Accuracy notes (read this before trusting a number)
 

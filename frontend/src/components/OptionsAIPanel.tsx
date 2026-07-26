@@ -3,6 +3,9 @@ import type { OptionsChain } from "../api/client";
 import { generateWithOllama, listOllamaModels } from "../localLlm";
 
 type Status = "idle" | "working" | "done" | "unreachable";
+type CopyStatus = "idle" | "copied" | "error";
+
+const GEMINI_URL = "https://gemini.google.com/app";
 
 function buildOptionsPrompt(chain: OptionsChain, companyName: string): string {
   const s = chain.summary;
@@ -32,6 +35,7 @@ export function OptionsAIPanel({ chain, companyName }: { chain: OptionsChain; co
   const [status, setStatus] = useState<Status>("idle");
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
 
   async function run() {
     setStatus("working");
@@ -40,9 +44,10 @@ export function OptionsAIPanel({ chain, companyName }: { chain: OptionsChain; co
     try {
       const detected = await listOllamaModels(baseUrl);
       if (detected.length === 0) {
-        throw new Error("Ollama is reachable but has no models pulled yet -- run: ollama pull llama3.2");
+        throw new Error("Ollama is reachable but has no usable chat model pulled yet -- run: ollama pull llama3.2");
       }
-      const useModel = detected.includes(model) ? model : detected[0];
+      const names = detected.map((m) => m.name);
+      const useModel = names.includes(model) ? model : names[0];
       setModel(useModel);
 
       const prompt = buildOptionsPrompt(chain, companyName);
@@ -55,12 +60,24 @@ export function OptionsAIPanel({ chain, companyName }: { chain: OptionsChain; co
     }
   }
 
+  async function copyPrompt() {
+    try {
+      await navigator.clipboard.writeText(buildOptionsPrompt(chain, companyName));
+      setCopyStatus("copied");
+      setTimeout(() => setCopyStatus("idle"), 2500);
+    } catch (e) {
+      setError((e as Error).message);
+      setCopyStatus("error");
+    }
+  }
+
   return (
     <div className="ai-read-panel">
       <p className="ai-read-intro">
         Analyzes the options chain above (put/call ratios, IV skew, implied move, unusual volume) using a language
         model running <strong>entirely on your machine</strong> via <a href="https://ollama.com" target="_blank" rel="noreferrer">Ollama</a>.
-        Nothing on this page is sent to any cloud service.
+        Nothing on this page is sent to any cloud service. Local model too slow? Copy the same prompt and run it
+        against a hosted model instead.
       </p>
       <div className="ai-read-controls">
         <label>
@@ -74,9 +91,21 @@ export function OptionsAIPanel({ chain, companyName }: { chain: OptionsChain; co
         <button className="primary-btn" onClick={run} disabled={status === "working"}>
           {status === "working" ? "Analyzing…" : "Analyze options chain (local)"}
         </button>
+        <button className="secondary-btn" onClick={copyPrompt}>
+          {copyStatus === "copied" ? "Copied ✓" : "Copy prompt"}
+        </button>
+        <a className="secondary-btn link-like" href={GEMINI_URL} target="_blank" rel="noreferrer">
+          Open Gemini ↗
+        </a>
       </div>
+      {copyStatus === "copied" && <p className="empty-note">Prompt copied — paste it into Gemini, ChatGPT, or any other AI tool.</p>}
+      {copyStatus === "error" && <p className="empty-note">Couldn't copy: {error}</p>}
+
       {status === "working" && (
-        <p className="empty-note">Running locally — larger models can take a minute or more on CPU-only hardware.</p>
+        <p className="empty-note">
+          Running locally — larger models can take several minutes on CPU-only hardware. Use "Copy prompt" above if
+          you don't want to wait.
+        </p>
       )}
       {status === "done" && <div className="ai-read-output">{output}</div>}
       {status === "unreachable" && (

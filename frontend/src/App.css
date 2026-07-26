@@ -580,6 +580,21 @@
   opacity: 0.6;
   cursor: default;
 }
+.secondary-btn {
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.secondary-btn.link-like {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
 .ai-read-output {
   background: var(--page-plane);
   border: 1px solid var(--border);

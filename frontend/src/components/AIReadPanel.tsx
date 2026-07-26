@@ -4,6 +4,9 @@ import { computeTechnicalRead, type TechnicalRead } from "../technicals";
 import { generateWithOllama, listOllamaModels } from "../localLlm";
 
 type Status = "idle" | "working" | "done" | "unreachable" | "error";
+type CopyStatus = "idle" | "copying" | "copied" | "error";
+
+const GEMINI_URL = "https://gemini.google.com/app";
 
 function buildPrompt(companyName: string, ticker: string, latest: AnnualRow | undefined, tech: TechnicalRead | null, ownership: OwnershipData | null): string {
   const lines: string[] = [
@@ -33,12 +36,24 @@ function buildPrompt(companyName: string, ticker: string, latest: AnnualRow | un
   return lines.join("\n");
 }
 
+async function loadPrompt(ticker: string, companyName: string): Promise<string> {
+  const [financials, prices, ownership] = await Promise.all([
+    api.companyFinancials(ticker),
+    api.companyPrices(ticker, "2y"),
+    api.companyOwnership(ticker).catch(() => null),
+  ]);
+  const latest = [...financials.annual].sort((a, b) => b.fy - a.fy)[0];
+  const tech = computeTechnicalRead(prices.points);
+  return buildPrompt(companyName, ticker, latest, tech, ownership);
+}
+
 export function AIReadPanel({ ticker, companyName }: { ticker: string; companyName: string }) {
   const [baseUrl, setBaseUrl] = useState("http://localhost:11434");
   const [model, setModel] = useState("llama3.2");
   const [status, setStatus] = useState<Status>("idle");
   const [output, setOutput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
 
   async function run() {
     setStatus("working");
@@ -47,20 +62,13 @@ export function AIReadPanel({ ticker, companyName }: { ticker: string; companyNa
     try {
       const detected = await listOllamaModels(baseUrl);
       if (detected.length === 0) {
-        throw new Error("Ollama is reachable but has no models pulled yet -- run: ollama pull llama3.2");
+        throw new Error("Ollama is reachable but has no usable chat model pulled yet -- run: ollama pull llama3.2");
       }
-      const useModel = detected.includes(model) ? model : detected[0];
+      const names = detected.map((m) => m.name);
+      const useModel = names.includes(model) ? model : names[0];
       setModel(useModel);
 
-      const [financials, prices, ownership] = await Promise.all([
-        api.companyFinancials(ticker),
-        api.companyPrices(ticker, "2y"),
-        api.companyOwnership(ticker).catch(() => null),
-      ]);
-      const latest = [...financials.annual].sort((a, b) => b.fy - a.fy)[0];
-      const tech = computeTechnicalRead(prices.points);
-
-      const prompt = buildPrompt(companyName, ticker, latest, tech, ownership);
+      const prompt = await loadPrompt(ticker, companyName);
       const text = await generateWithOllama(baseUrl, useModel, prompt);
       setOutput(text.trim());
       setStatus("done");
@@ -70,12 +78,26 @@ export function AIReadPanel({ ticker, companyName }: { ticker: string; companyNa
     }
   }
 
+  async function copyPrompt() {
+    setCopyStatus("copying");
+    try {
+      const prompt = await loadPrompt(ticker, companyName);
+      await navigator.clipboard.writeText(prompt);
+      setCopyStatus("copied");
+      setTimeout(() => setCopyStatus("idle"), 2500);
+    } catch (e) {
+      setError((e as Error).message);
+      setCopyStatus("error");
+    }
+  }
+
   return (
     <div className="ai-read-panel">
       <p className="ai-read-intro">
         Synthesizes the data on this page into a short plain-English read using a large language model running{" "}
         <strong>entirely on your machine</strong> via <a href="https://ollama.com" target="_blank" rel="noreferrer">Ollama</a>. No API key, no cost, and
-        nothing on this page is sent to any cloud service — the browser talks directly to Ollama on localhost.
+        nothing on this page is sent to any cloud service — the browser talks directly to Ollama on localhost. Local
+        model too slow? Copy the same prompt and run it against a hosted model instead.
       </p>
 
       <div className="ai-read-controls">
@@ -90,11 +112,20 @@ export function AIReadPanel({ ticker, companyName }: { ticker: string; companyNa
         <button className="primary-btn" onClick={run} disabled={status === "working"}>
           {status === "working" ? "Generating…" : "Generate AI read (local)"}
         </button>
+        <button className="secondary-btn" onClick={copyPrompt} disabled={copyStatus === "copying"}>
+          {copyStatus === "copied" ? "Copied ✓" : copyStatus === "copying" ? "Copying…" : "Copy prompt"}
+        </button>
+        <a className="secondary-btn link-like" href={GEMINI_URL} target="_blank" rel="noreferrer">
+          Open Gemini ↗
+        </a>
       </div>
+      {copyStatus === "copied" && <p className="empty-note">Prompt copied — paste it into Gemini, ChatGPT, or any other AI tool.</p>}
+      {copyStatus === "error" && <p className="empty-note">Couldn't build the prompt: {error}</p>}
 
       {status === "working" && (
         <p className="empty-note">
-          Running locally — larger models can take a minute or more on CPU-only hardware. Not stuck, just thinking.
+          Running locally — larger models can take several minutes on CPU-only hardware. Not stuck, just slow; use
+          "Copy prompt" above if you don't want to wait.
         </p>
       )}
 
