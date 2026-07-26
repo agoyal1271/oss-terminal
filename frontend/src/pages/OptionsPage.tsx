@@ -139,7 +139,7 @@ export function OptionsPage() {
           {profile && (
             <div className="panel">
               <h3>AI analysis (local LLM)</h3>
-              <OptionsAIPanel chain={chain} companyName={profile.name} />
+              <OptionsAIPanel ticker={ticker} chain={chain} companyName={profile.name} />
             </div>
           )}
         </>

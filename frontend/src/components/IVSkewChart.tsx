@@ -1,5 +1,6 @@
 import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { OptionsChain } from "../api/client";
+import { describeSkew } from "../optionsAnalysis";
 import { fmtPercent, fmtUsd } from "../format";
 
 export function IVSkewChart({ chain }: { chain: OptionsChain }) {
@@ -29,6 +30,7 @@ export function IVSkewChart({ chain }: { chain: OptionsChain }) {
   }
 
   const atmStrike = chain.summary.atm_strike;
+  const read = describeSkew(chain);
 
   return (
     <div>
@@ -57,11 +59,7 @@ export function IVSkewChart({ chain }: { chain: OptionsChain }) {
           <Line type="monotone" dataKey="putIv" name="Put IV" stroke="var(--series-2)" strokeWidth={2} dot={{ r: 2 }} connectNulls />
         </LineChart>
       </ResponsiveContainer>
-      <p className="source-note">
-        Dashed line marks the at-the-money strike. Rising IV toward lower strikes (put side) is normal equity skew —
-        crash protection costs more than equivalent upside. Skew flattening or inverting toward the call side is the
-        speculative-chasing pattern.
-      </p>
+      <p className="source-note">Dashed line marks the at-the-money strike. {read.summary}</p>
     </div>
   );
 }

@@ -1,15 +1,8 @@
 import { useEffect, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, type TermStructure } from "../api/client";
+import { describeTermStructure, daysToExpiry, formatExpirationShort } from "../optionsAnalysis";
 import { fmtPercent } from "../format";
-
-function daysOut(expirationSeconds: number): number {
-  return Math.round((expirationSeconds * 1000 - Date.now()) / 86_400_000);
-}
-
-function formatExpirationShort(unixSeconds: number): string {
-  return new Date(unixSeconds * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
 
 export function IVTermStructureChart({ ticker }: { ticker: string }) {
   const [data, setData] = useState<TermStructure | null>(null);
@@ -26,23 +19,13 @@ export function IVTermStructureChart({ ticker }: { ticker: string }) {
   if (data.points.length < 2) return <div className="empty-note">Not enough expirations with quoted IV to chart a term structure.</div>;
 
   const chartData = data.points.map((p) => ({
-    label: `${formatExpirationShort(p.expiration)} (${daysOut(p.expiration)}d)`,
-    days: daysOut(p.expiration),
+    label: `${formatExpirationShort(p.expiration)} (${daysToExpiry(p.expiration)}d)`,
+    days: daysToExpiry(p.expiration),
     callIv: p.call_iv,
     putIv: p.put_iv,
   }));
 
-  // Backwardation (a near-term IV spike above the surrounding points) is the
-  // signal worth calling out -- it usually means the market is pricing a
-  // known event (earnings, a ruling) into that specific expiration.
-  const avgIvs = chartData.map((d) => ((d.callIv ?? 0) + (d.putIv ?? 0)) / 2);
-  let spikeIndex = -1;
-  for (let i = 0; i < avgIvs.length - 1; i++) {
-    if (avgIvs[i] > avgIvs[i + 1] * 1.15) {
-      spikeIndex = i;
-      break;
-    }
-  }
+  const read = describeTermStructure(data.points);
 
   return (
     <div>
@@ -61,18 +44,7 @@ export function IVTermStructureChart({ ticker }: { ticker: string }) {
           <Line type="monotone" dataKey="putIv" name="Put IV" stroke="var(--series-2)" strokeWidth={2} dot={{ r: 3 }} connectNulls />
         </LineChart>
       </ResponsiveContainer>
-      {spikeIndex >= 0 ? (
-        <p className="source-note">
-          IV jumps at {chartData[spikeIndex].label} then falls back for later expirations — that shape (backwardation)
-          usually means the market is pricing a specific event into that expiration, not a smooth increase in
-          uncertainty over time.
-        </p>
-      ) : (
-        <p className="source-note">
-          IV rises smoothly further out — normal term structure, no sign of a specific event being priced into a
-          near-term expiration.
-        </p>
-      )}
+      <p className="source-note">{read.summary}</p>
     </div>
   );
 }

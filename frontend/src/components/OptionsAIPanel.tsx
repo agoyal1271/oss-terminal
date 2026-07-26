@@ -1,5 +1,6 @@
 import { useState } from "react";
-import type { OptionsChain } from "../api/client";
+import { api, type OptionsChain } from "../api/client";
+import { describeSkew, describeTermStructure } from "../optionsAnalysis";
 import { generateWithOllama, listOllamaModels } from "../localLlm";
 
 type Status = "idle" | "working" | "done" | "unreachable";
@@ -7,15 +8,18 @@ type CopyStatus = "idle" | "copied" | "error";
 
 const GEMINI_URL = "https://gemini.google.com/app";
 
-function buildOptionsPrompt(chain: OptionsChain, companyName: string): string {
+async function loadOptionsPrompt(ticker: string, chain: OptionsChain, companyName: string): Promise<string> {
   const s = chain.summary;
   const daysToExpiry = Math.round((chain.selected_expiration * 1000 - Date.now()) / 86_400_000);
   const topByVolume = (contracts: OptionsChain["calls"]) =>
     [...contracts].sort((a, b) => b.volume - a.volume).slice(0, 3).map((c) => `strike $${c.strike} (vol ${c.volume}, OI ${c.open_interest}, IV ${((c.implied_volatility ?? 0) * 100).toFixed(0)}%)`).join("; ");
 
+  const skew = describeSkew(chain);
+  const termStructure = await api.companyOptionsTermStructure(ticker).catch(() => null);
+
   const lines = [
     `You are a research assistant describing the options market for ${companyName} for a retail investor.`,
-    `Write 4-6 plain-English sentences on what this options activity implies (sentiment lean, expected volatility, notable positioning).`,
+    `Write 5-7 plain-English sentences on what this options activity implies (sentiment lean, expected volatility, term structure shape, skew, notable positioning).`,
     `Do not give buy/sell advice or recommend a specific options strategy -- describe only what the data shows.`,
     ``,
     `DATA (expiration in ~${daysToExpiry} days, underlying price $${chain.underlying_price}):`,
@@ -23,13 +27,15 @@ function buildOptionsPrompt(chain: OptionsChain, companyName: string): string {
     `- Put/call open interest ratio: ${s.put_call_oi_ratio?.toFixed(2) ?? "n/a"} (reflects existing positioning, not just today's activity)`,
     `- At-the-money strike ~$${s.atm_strike}: call IV ${s.atm_call_iv ? (s.atm_call_iv * 100).toFixed(0) + "%" : "n/a"}, put IV ${s.atm_put_iv ? (s.atm_put_iv * 100).toFixed(0) + "%" : "n/a"}`,
     `- Market-implied expected move by expiration (ATM straddle price): ${s.expected_move_atm_straddle ? "$" + s.expected_move_atm_straddle.toFixed(2) : "n/a"}`,
+    `- IV skew (this expiration): ${skew.summary}`,
+    termStructure ? `- IV term structure (across upcoming expirations): ${describeTermStructure(termStructure.points).summary}` : `- IV term structure: unavailable`,
     `- Highest-volume calls: ${topByVolume(chain.calls) || "none"}`,
     `- Highest-volume puts: ${topByVolume(chain.puts) || "none"}`,
   ];
   return lines.join("\n");
 }
 
-export function OptionsAIPanel({ chain, companyName }: { chain: OptionsChain; companyName: string }) {
+export function OptionsAIPanel({ ticker, chain, companyName }: { ticker: string; chain: OptionsChain; companyName: string }) {
   const [baseUrl, setBaseUrl] = useState("http://localhost:11434");
   const [model, setModel] = useState("llama3.2");
   const [status, setStatus] = useState<Status>("idle");
@@ -50,7 +56,7 @@ export function OptionsAIPanel({ chain, companyName }: { chain: OptionsChain; co
       const useModel = names.includes(model) ? model : names[0];
       setModel(useModel);
 
-      const prompt = buildOptionsPrompt(chain, companyName);
+      const prompt = await loadOptionsPrompt(ticker, chain, companyName);
       const text = await generateWithOllama(baseUrl, useModel, prompt);
       setOutput(text.trim());
       setStatus("done");
@@ -62,7 +68,8 @@ export function OptionsAIPanel({ chain, companyName }: { chain: OptionsChain; co
 
   async function copyPrompt() {
     try {
-      await navigator.clipboard.writeText(buildOptionsPrompt(chain, companyName));
+      const prompt = await loadOptionsPrompt(ticker, chain, companyName);
+      await navigator.clipboard.writeText(prompt);
       setCopyStatus("copied");
       setTimeout(() => setCopyStatus("idle"), 2500);
     } catch (e) {
@@ -74,10 +81,10 @@ export function OptionsAIPanel({ chain, companyName }: { chain: OptionsChain; co
   return (
     <div className="ai-read-panel">
       <p className="ai-read-intro">
-        Analyzes the options chain above (put/call ratios, IV skew, implied move, unusual volume) using a language
-        model running <strong>entirely on your machine</strong> via <a href="https://ollama.com" target="_blank" rel="noreferrer">Ollama</a>.
-        Nothing on this page is sent to any cloud service. Local model too slow? Copy the same prompt and run it
-        against a hosted model instead.
+        Analyzes the options chain above — put/call ratios, IV term structure, IV skew, implied move, unusual volume —
+        using a language model running <strong>entirely on your machine</strong> via{" "}
+        <a href="https://ollama.com" target="_blank" rel="noreferrer">Ollama</a>. Nothing on this page is sent to any
+        cloud service. Local model too slow? Copy the same prompt and run it against a hosted model instead.
       </p>
       <div className="ai-read-controls">
         <label>
