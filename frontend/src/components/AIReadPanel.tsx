@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, type AnnualRow, type OwnershipData } from "../api/client";
+import { api, type AnnualRow, type OptionsChain, type OwnershipData } from "../api/client";
 import { computeTechnicalRead, type TechnicalRead } from "../technicals";
 import { generateWithOllama, listOllamaModels } from "../localLlm";
 
@@ -8,7 +8,14 @@ type CopyStatus = "idle" | "copying" | "copied" | "error";
 
 const GEMINI_URL = "https://gemini.google.com/app";
 
-function buildPrompt(companyName: string, ticker: string, latest: AnnualRow | undefined, tech: TechnicalRead | null, ownership: OwnershipData | null): string {
+function buildPrompt(
+  companyName: string,
+  ticker: string,
+  latest: AnnualRow | undefined,
+  tech: TechnicalRead | null,
+  ownership: OwnershipData | null,
+  options: OptionsChain | null,
+): string {
   const lines: string[] = [
     `You are a research assistant summarizing publicly reported data about ${companyName} (${ticker}) for a retail investor.`,
     `Write 4-6 plain-English sentences covering both supportive and concerning signals in the data below.`,
@@ -33,18 +40,28 @@ function buildPrompt(companyName: string, ticker: string, latest: AnnualRow | un
   if (ownership) {
     lines.push(`- Institutional ownership: ~${ownership.holder_count_estimate} institutional filers (Form 13F, quarter ended ${ownership.quarter_end}).`);
   }
+  if (options) {
+    const s = options.summary;
+    const daysToExpiry = Math.round((options.selected_expiration * 1000 - Date.now()) / 86_400_000);
+    lines.push(
+      `- Options market (nearest expiration, ~${daysToExpiry} days out): put/call volume ratio ${s.put_call_volume_ratio?.toFixed(2) ?? "n/a"}, ` +
+        `put/call open interest ratio ${s.put_call_oi_ratio?.toFixed(2) ?? "n/a"}, ATM implied volatility ${s.atm_call_iv ? (s.atm_call_iv * 100).toFixed(0) + "%" : "n/a"}, ` +
+        `market-implied expected move by expiration ${s.expected_move_atm_straddle ? "$" + s.expected_move_atm_straddle.toFixed(2) : "n/a"}.`,
+    );
+  }
   return lines.join("\n");
 }
 
 async function loadPrompt(ticker: string, companyName: string): Promise<string> {
-  const [financials, prices, ownership] = await Promise.all([
+  const [financials, prices, ownership, options] = await Promise.all([
     api.companyFinancials(ticker),
     api.companyPrices(ticker, "2y"),
     api.companyOwnership(ticker).catch(() => null),
+    api.companyOptions(ticker).catch(() => null),
   ]);
   const latest = [...financials.annual].sort((a, b) => b.fy - a.fy)[0];
   const tech = computeTechnicalRead(prices.points);
-  return buildPrompt(companyName, ticker, latest, tech, ownership);
+  return buildPrompt(companyName, ticker, latest, tech, ownership, options);
 }
 
 export function AIReadPanel({ ticker, companyName }: { ticker: string; companyName: string }) {
@@ -94,10 +111,12 @@ export function AIReadPanel({ ticker, companyName }: { ticker: string; companyNa
   return (
     <div className="ai-read-panel">
       <p className="ai-read-intro">
-        Synthesizes the data on this page into a short plain-English read using a large language model running{" "}
-        <strong>entirely on your machine</strong> via <a href="https://ollama.com" target="_blank" rel="noreferrer">Ollama</a>. No API key, no cost, and
-        nothing on this page is sent to any cloud service — the browser talks directly to Ollama on localhost. Local
-        model too slow? Copy the same prompt and run it against a hosted model instead.
+        Synthesizes financials, the technical read, institutional ownership, and nearest-expiration options market
+        data (put/call ratios, implied volatility, expected move) into a short plain-English read using a large
+        language model running <strong>entirely on your machine</strong> via{" "}
+        <a href="https://ollama.com" target="_blank" rel="noreferrer">Ollama</a>. No API key, no cost, and nothing
+        here is sent to any cloud service — the browser talks directly to Ollama on localhost. Local model too slow?
+        Copy the same prompt and run it against a hosted model instead.
       </p>
 
       <div className="ai-read-controls">
