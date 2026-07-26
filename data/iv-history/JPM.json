@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "ticker": "JPM",
+    "date": "2026-07-26",
+    "expiration": 1787875200,
+    "underlying_price": 353.21,
+    "atm_strike": 355.0,
+    "call_iv": 0.23822783264160152,
+    "put_iv": 0.2420119744873047
+  }
+]

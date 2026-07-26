@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "ticker": "NVDA",
+    "date": "2026-07-26",
+    "expiration": 1787875200,
+    "underlying_price": 206.84,
+    "atm_strike": 205.0,
+    "call_iv": 0.48529567443847654,
+    "put_iv": 0.4529473651123047
+  }
+]

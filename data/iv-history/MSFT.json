@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "ticker": "MSFT",
+    "date": "2026-07-26",
+    "expiration": 1787875200,
+    "underlying_price": 381.7,
+    "atm_strike": 380.0,
+    "call_iv": 0.45834892242431646,
+    "put_iv": 0.42816733947753904
+  }
+]

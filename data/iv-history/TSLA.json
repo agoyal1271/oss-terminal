@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "ticker": "TSLA",
+    "date": "2026-07-26",
+    "expiration": 1787875200,
+    "underlying_price": 313.03,
+    "atm_strike": 315.0,
+    "call_iv": 0.5031177618408205,
+    "put_iv": 0.47119669433593747
+  }
+]

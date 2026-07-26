@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "ticker": "AAPL",
+    "date": "2026-07-26",
+    "expiration": 1787875200,
+    "underlying_price": 333.02,
+    "atm_strike": 335.0,
+    "call_iv": 0.3065865240478516,
+    "put_iv": 0.28494977752685535
+  }
+]

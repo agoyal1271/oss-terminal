@@ -1,1 +1,11 @@
-[]
+[
+  {
+    "ticker": "GOOGL",
+    "date": "2026-07-26",
+    "expiration": 1787875200,
+    "underlying_price": 319.74,
+    "atm_strike": 320.0,
+    "call_iv": 0.34363449340820307,
+    "put_iv": 0.30750204223632804
+  }
+]
