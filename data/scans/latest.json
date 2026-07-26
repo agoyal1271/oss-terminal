@@ -1,0 +1,123 @@
+{
+  "date": "2026-07-26",
+  "findings": [
+    {
+      "key": "AAPL.unusual_activity.AAPL260828C00360000",
+      "ticker": "AAPL",
+      "category": "options",
+      "severity": "warn",
+      "title": "AAPL: unusual options activity",
+      "detail": "AAPL260828C00360000 (~30d tenor): volume 2,296 vs open interest 735 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2296,
+      "ctx": {
+        "strike": 360.0,
+        "expiration": 1787875200
+      }
+    },
+    {
+      "key": "AAPL.term_structure_backwardation",
+      "ticker": "AAPL",
+      "category": "options",
+      "severity": "warn",
+      "title": "AAPL: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1785456000 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1785456000
+      }
+    },
+    {
+      "key": "MSFT.term_structure_backwardation",
+      "ticker": "MSFT",
+      "category": "options",
+      "severity": "warn",
+      "title": "MSFT: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1785456000 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1785456000
+      }
+    },
+    {
+      "key": "TSLA.unusual_activity.TSLA260828P00260000",
+      "ticker": "TSLA",
+      "category": "options",
+      "severity": "warn",
+      "title": "TSLA: unusual options activity",
+      "detail": "TSLA260828P00260000 (~30d tenor): volume 2,507 vs open interest 223 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2507,
+      "ctx": {
+        "strike": 260.0,
+        "expiration": 1787875200
+      }
+    },
+    {
+      "key": "TSLA.unusual_activity.TSLA260828P00255000",
+      "ticker": "TSLA",
+      "category": "options",
+      "severity": "warn",
+      "title": "TSLA: unusual options activity",
+      "detail": "TSLA260828P00255000 (~30d tenor): volume 2,367 vs open interest 328 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2367,
+      "ctx": {
+        "strike": 255.0,
+        "expiration": 1787875200
+      }
+    },
+    {
+      "key": "JPM.new_52w_high",
+      "ticker": "JPM",
+      "category": "technical",
+      "severity": "warn",
+      "title": "JPM: new 52-week high",
+      "detail": "Closed at 353.21, above the prior 52-week high of 351.24.",
+      "value": 353.2099914550781,
+      "ctx": {}
+    },
+    {
+      "key": "BMNR.insider_cluster.30",
+      "ticker": "BMNR",
+      "category": "filing",
+      "severity": "info",
+      "title": "BMNR: insider filing cluster",
+      "detail": "5 Form 4 filings in the last 5 days.",
+      "value": 5,
+      "ctx": {}
+    },
+    {
+      "key": "COIN.term_structure_backwardation",
+      "ticker": "COIN",
+      "category": "options",
+      "severity": "warn",
+      "title": "COIN: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1785456000 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1785456000
+      }
+    }
+  ],
+  "posted": [
+    "AAPL.unusual_activity.AAPL260828C00360000",
+    "AAPL.term_structure_backwardation",
+    "MSFT.term_structure_backwardation",
+    "TSLA.unusual_activity.TSLA260828P00260000",
+    "TSLA.unusual_activity.TSLA260828P00255000",
+    "JPM.new_52w_high",
+    "COIN.term_structure_backwardation",
+    "BMNR.insider_cluster.30"
+  ],
+  "scan_errors": [],
+  "tickers_scanned": [
+    "AAPL",
+    "AMZN",
+    "BMNR",
+    "BRK-B",
+    "COIN",
+    "GOOGL",
+    "JPM",
+    "MSFT",
+    "NVDA",
+    "TSLA"
+  ]
+}
