@@ -166,6 +166,28 @@ def parse_command(text: str) -> tuple[str, str] | None:
     return candidate, extra
 
 
+def parse_reply_question(text: str) -> str | None:
+    """Returns the question text if `text` starts with the command prefix
+    (with or without leading "?"), else None -- deliberately does NOT
+    require a ticker-shaped first word, unlike parse_command.
+
+    For a threaded follow-up, forcing "ticker is the first word after
+    ask" breaks on completely normal phrasing -- observed live: "?ask does
+    it carry more weight on the call side or put side with 140% IV on
+    spcx" has the ticker at the END of the sentence, and a naive first-word
+    parse would try to resolve "DOES" as a ticker and fail. Used only for
+    replies inside a thread that already has an established ticker (see
+    poll_once), so there's no ambiguity about what stock the question is
+    about -- the whole remainder is just the follow-up question.
+    """
+    stripped = text.strip().lstrip("?").strip()
+    core_prefix = COMMAND_PREFIX.lstrip("?")
+    if not stripped.lower().startswith(core_prefix):
+        return None
+    rest = stripped[len(core_prefix):].strip()
+    return rest or None
+
+
 # Slack's chat.postMessage `text` field renders Slack's own "mrkdwn", not
 # standard Markdown: *single asterisks* for bold, no "#" header syntax,
 # and no native bullet rendering (a "- " or "* " just shows as a literal
@@ -219,7 +241,9 @@ def to_slack_mrkdwn(text: str) -> str:
     return re.sub(r"\*\*(.+?)\*\*", r"*\1*", result)
 
 
-def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts: str) -> None:
+def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts: str) -> str | None:
+    """Returns the ticker on success (so poll_once can remember it as this
+    thread's context for follow-up replies), None on any failure."""
     print(f"[{time.strftime('%H:%M:%S')}] handling ?ask {ticker} {extra_question!r}")
     try:
         post_message(channel_id, f"\U0001f914 Looking at {ticker}... (local Ollama, can take a few minutes)", thread_ts=thread_ts)
@@ -230,10 +254,10 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
         prompt, meta = build_answer_prompt(ticker, extra_question)
     except SystemExit as exc:
         post_message(channel_id, f"Couldn't resolve `{ticker}`: {exc}", thread_ts=thread_ts)
-        return
+        return None
     except (urllib.error.URLError, RuntimeError) as exc:
         post_message(channel_id, f"Couldn't fetch data for `{ticker}`: {exc}", thread_ts=thread_ts)
-        return
+        return None
 
     added = ask_lib.add_to_watchlist(ticker)
     link = f"{ask_lib.FRONTEND_URL}/c/{ticker}/options"
@@ -242,7 +266,7 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
         answer = ask_lib.run_ollama(OLLAMA_URL, OLLAMA_MODEL, prompt, timeout=600)
     except SystemExit as exc:
         post_message(channel_id, f"Local Ollama couldn't answer this one: {exc}", thread_ts=thread_ts)
-        return
+        return None
 
     answer = to_slack_mrkdwn(answer.strip())
     if len(answer) > MAX_REPLY_CHARS:
@@ -252,6 +276,7 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
     reply = f"*{meta['name']} ({ticker})* — {link}\n\n{answer}{watchlist_note}"
     post_message(channel_id, reply, thread_ts=thread_ts)
     print(f"  done, posted {len(answer)} chars")
+    return ticker
 
 
 def poll_once(channel_id: str, bot_user_id: str, state: dict) -> None:
@@ -260,6 +285,8 @@ def poll_once(channel_id: str, bot_user_id: str, state: dict) -> None:
         params["oldest"] = state["last_ts"]
     data = slack_call("conversations.history", params, http_method="GET")
     messages = sorted(data.get("messages", []), key=lambda m: float(m["ts"]))
+
+    thread_tickers = state.setdefault("thread_tickers", {})
 
     newest_ts = state.get("last_ts")
     for msg in messages:
@@ -270,21 +297,44 @@ def poll_once(channel_id: str, bot_user_id: str, state: dict) -> None:
 
         if msg.get("bot_id") or msg.get("user") == bot_user_id or msg.get("subtype"):
             continue
-        if msg.get("thread_ts") and msg["thread_ts"] != ts:
-            continue  # only react to new top-level messages, not thread replies
 
-        parsed = parse_command(msg.get("text", ""))
-        if not parsed:
+        is_reply = bool(msg.get("thread_ts") and msg["thread_ts"] != ts)
+        text = msg.get("text", "")
+        ticker: str | None = None
+        extra = ""
+        reply_target = msg.get("thread_ts") or ts
+
+        if is_reply and thread_tickers.get(msg["thread_ts"]):
+            # A follow-up in a thread this bot already answered in --
+            # inherit that thread's ticker rather than re-parsing one, so
+            # natural phrasing like "...what about it on the call side"
+            # (no ticker as the first word) still works. See
+            # parse_reply_question's docstring for why this exists.
+            question = parse_reply_question(text)
+            if question is not None:
+                ticker, extra = thread_tickers[msg["thread_ts"]], question
+        if ticker is None:
+            # Either a top-level message, or a reply in a thread with no
+            # known ticker yet -- require the strict "ask TICKER ..." form
+            # so a random threaded aside doesn't misfire.
+            parsed = parse_command(text)
+            if parsed:
+                ticker, extra = parsed
+
+        if ticker is None:
             continue
-        ticker, extra = parsed
+
         try:
-            handle_command(channel_id, ticker, extra, thread_ts=ts)
+            resolved = handle_command(channel_id, ticker, extra, thread_ts=reply_target)
         except Exception:
+            resolved = None
             traceback.print_exc()
             try:
-                post_message(channel_id, f"Something went wrong answering that one -- check the bot's local log.", thread_ts=ts)
+                post_message(channel_id, "Something went wrong answering that one -- check the bot's local log.", thread_ts=reply_target)
             except RuntimeError:
                 pass
+        if resolved:
+            thread_tickers[reply_target] = resolved
 
     if newest_ts:
         state["last_ts"] = newest_ts
