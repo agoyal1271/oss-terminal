@@ -577,7 +577,47 @@ honestly supports two buckets at once (RSI < 30 is both "oversold bounce
 setup" and "sustained selling") and is recorded in both rather than forced
 into one — the tally is an evidence count, never a probability or a
 prediction, and the prompt says so explicitly. This is also the shared
-logic the planned Slack Q&A bot (`?ask SNOW ...`) will call into.
+logic the Slack Q&A bot (`?ask SNOW ...`, below) calls into.
+
+### Slack Q&A bot (`scripts/slack_bot.py`)
+
+A local daemon that polls `#equity-alerts` for `?ask TICKER [question]`,
+answers using local Ollama, and posts the reply in-thread — so anyone in
+the workspace can ask, not just whoever's running the terminal. It's a
+thin wrapper: ticker resolution, the two-week window, the evidence tally,
+and the Ollama call are all `scripts/ask.py`'s logic, reused as-is, so the
+Slack answer and the terminal answer are never two different code paths.
+
+Setup: copy `scripts/.env.example` to `scripts/.env` and fill in a Bot
+User OAuth Token (`xoxb-...`, **not** `xoxp-` — a user token posts as you,
+not as a distinct bot) with `channels:history`, `channels:read`,
+`chat:write` scopes, invite the bot to the channel, then either run it
+directly (`python scripts/slack_bot.py`) or install it as a `launchd`
+agent so it survives restarts:
+
+```
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.ossterminal.slackbot.plist
+```
+
+Verified live end-to-end, including that this actually matters: `KeepAlive`
+restarts it if killed (confirmed by killing the process and watching
+launchd relaunch it with a new PID). This is the exact step
+[[market-alerting]]'s local ETH monitor skipped — its plists were written
+but never `launchctl`-loaded, so it silently never ran. Two real bugs
+surfaced by testing against live data rather than fixtures, both fixed:
+
+- **Degenerate IV reads as a fabricated signal.** Yahoo returns a near-zero
+  implied vol (not null) for a contract with no live quote (bid == ask ==
+  $0) rather than omitting it — observed a real ticker's ATM IV read ~76%
+  during market hours and ~0.4% minutes later once quotes went stale.
+  Without a floor, that got promoted into "the market is pricing an event"
+  evidence with a nonsensical "0% IV" figure. `two_week.py`'s
+  `MIN_PLAUSIBLE_IV` (3%) now treats a sub-floor reading as missing data.
+- **Local models write Markdown, Slack renders mrkdwn.** `**bold**` and
+  `# headers` show as literal characters in Slack's `chat.postMessage`,
+  not as formatting. Fixed with an explicit instruction in the prompt plus
+  `to_slack_mrkdwn()` as a safety net, since a 3B model doesn't reliably
+  follow formatting instructions on its own.
 
 ### Setup still needed
 
@@ -624,12 +664,6 @@ wrong threshold and confirming the tests fail — they did, immediately.
 
 This is Phase 1 of the plan discussed. Later phases:
 
-- **Slack Q&A bot.** A local daemon polling `#equity-alerts`, so anyone in
-  the workspace can ask "?ask SNOW anything unusual?" and get an answer
-  from local Ollama (not the account's Claude) built on the same
-  `two_week.py` evidence tally `scripts/ask.py` uses standalone today —
-  this is the missing "wire it into Slack" step, the analysis logic
-  already exists and is tested.
 - **Forward-return tracking.** Every scan already commits dated findings to
   `data/scans/` — a job that checks what price actually did 5/20 trading
   days after each finding and reports a per-signal hit-rate, honestly
