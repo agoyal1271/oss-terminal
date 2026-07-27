@@ -167,25 +167,28 @@ def parse_command(text: str) -> tuple[str, str] | None:
 
 
 def parse_reply_question(text: str) -> str | None:
-    """Returns the question text if `text` starts with the command prefix
-    (with or without leading "?"), else None -- deliberately does NOT
-    require a ticker-shaped first word, unlike parse_command.
+    """Returns the follow-up question for a reply inside a thread that
+    already has an established ticker (see poll_once) -- or None only for
+    an empty/whitespace message.
 
-    For a threaded follow-up, forcing "ticker is the first word after
-    ask" breaks on completely normal phrasing -- observed live: "?ask does
-    it carry more weight on the call side or put side with 140% IV on
-    spcx" has the ticker at the END of the sentence, and a naive first-word
-    parse would try to resolve "DOES" as a ticker and fail. Used only for
-    replies inside a thread that already has an established ticker (see
-    poll_once), so there's no ambiguity about what stock the question is
-    about -- the whole remainder is just the follow-up question.
+    Deliberately does NOT require the "ask"/"?ask" prefix here, unlike
+    parse_command. Observed live, twice: (1) "?ask does it carry more
+    weight on the call side or put side with 140% IV on spcx" has the
+    ticker at the END of the sentence, not the first word, so ticker-
+    shaped-first-word parsing fails; (2) a later reply in the same
+    conversation, "?any unusual option activity for the next 3 weeks",
+    doesn't even start with "ask" and got silently ignored under the old
+    rule. Once someone is already talking to the bot in a thread it
+    started, requiring a fresh trigger word on every single reply doesn't
+    match how people actually type a follow-up. Any leading "?" is still
+    stripped since it's evidently a habit, but it's cosmetic here, not a
+    gate.
     """
     stripped = text.strip().lstrip("?").strip()
     core_prefix = COMMAND_PREFIX.lstrip("?")
-    if not stripped.lower().startswith(core_prefix):
-        return None
-    rest = stripped[len(core_prefix):].strip()
-    return rest or None
+    if stripped.lower().startswith(core_prefix):
+        stripped = stripped[len(core_prefix):].strip()
+    return stripped or None
 
 
 # Slack's chat.postMessage `text` field renders Slack's own "mrkdwn", not
