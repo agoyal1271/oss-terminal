@@ -11,17 +11,24 @@ export function CompanyHeader({ profile, ticker, active }: { profile: CompanyPro
             {profile.name} <span className="ticker-pill">{profile.ticker}</span>
           </h1>
           <div className="company-meta">
-            {profile.sic_description} · {profile.exchanges.join(", ") || "OTC/unlisted"} · CIK {profile.cik}
+            {profile.sic_description} · {profile.exchanges.join(", ") || "OTC/unlisted"}
+            {profile.cik ? ` · CIK ${profile.cik}` : ""}
           </div>
         </div>
-        <a
-          className="edgar-link"
-          href={`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${profile.cik}&type=&dateb=&owner=include&count=40`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          All filings on EDGAR ↗
-        </a>
+        {profile.cik ? (
+          <a
+            className="edgar-link"
+            href={`https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${profile.cik}&type=&dateb=&owner=include&count=40`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            All filings on EDGAR ↗
+          </a>
+        ) : (
+          <span className="edgar-link edgar-link-disabled" title="Not an SEC operating-company filer">
+            No SEC filings (ETF)
+          </span>
+        )}
       </div>
       <div className="screen-tabs">
         <Link to={`/c/${ticker}`} className={active === "overview" ? "active" : ""}>

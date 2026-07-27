@@ -188,6 +188,10 @@
   white-space: nowrap;
   text-decoration: none;
 }
+.edgar-link-disabled {
+  color: var(--text-secondary);
+  cursor: default;
+}
 
 .loading, .error-box {
   padding: 60px 0;

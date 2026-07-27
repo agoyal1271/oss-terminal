@@ -9,15 +9,19 @@ export interface TickerResult {
 
 export interface CompanyProfile {
   ticker: string;
-  cik: number;
-  cik_str: string;
+  // null for tickers resolved via Yahoo only (typically ETFs) -- not an
+  // SEC operating-company filer, so no CIK exists. See sec_coverage.
+  cik: number | null;
+  cik_str: string | null;
   name: string;
-  sic: string;
+  sic: string | null;
   sic_description: string;
   exchanges: string[];
-  ein: string;
+  ein: string | null;
   category: string;
-  fiscal_year_end: string;
+  fiscal_year_end: string | null;
+  website?: string | null;
+  investor_website?: string | null;
   address: {
     street1: string;
     street2: string | null;
@@ -25,6 +29,7 @@ export interface CompanyProfile {
     stateOrCountry: string;
     zipCode: string;
   } | null;
+  sec_coverage: boolean;
 }
 
 export interface AnnualRow {

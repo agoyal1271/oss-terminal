@@ -32,10 +32,15 @@ export function CompanyPage() {
     setShowAllFilings(false);
 
     Promise.all([
+      // profile is the only call allowed to fail the whole page -- an
+      // unresolvable ticker should show an error. Financials/filings
+      // genuinely don't exist for ETFs (confirmed live: they 404 with an
+      // explanation, not a crash) and shouldn't take price/technicals/AI
+      // read down with them, so each degrades independently instead.
       api.companyProfile(ticker).then((p) => !cancelled && setProfile(p)),
-      api.companyFinancials(ticker).then((f) => !cancelled && setFinancials(f)),
+      api.companyFinancials(ticker).then((f) => !cancelled && setFinancials(f)).catch(() => {}),
       api.companyPrices(ticker, "1y").then((p) => !cancelled && setPrices(p)).catch(() => {}),
-      api.companyFilings(ticker, 15, [...SUBSTANTIVE_FORMS]).then((r) => !cancelled && setFilings(r.filings)),
+      api.companyFilings(ticker, 15, [...SUBSTANTIVE_FORMS]).then((r) => !cancelled && setFilings(r.filings)).catch(() => {}),
     ])
       .catch((e) => !cancelled && setError(e.message))
       .finally(() => !cancelled && setLoading(false));
@@ -80,6 +85,7 @@ export function CompanyPage() {
         <div className="panel">
           <h3>Revenue & net income</h3>
           {financials && <RevenueChart annual={financials.annual} />}
+          {profile && !profile.sec_coverage && <p className="source-note">Not applicable — {profile.name} isn't an SEC operating-company filer (ETF).</p>}
           <p className="source-note">Source: SEC EDGAR XBRL company facts, annual (10-K) figures only.</p>
         </div>
       </div>
@@ -91,17 +97,27 @@ export function CompanyPage() {
 
       <div className="panel">
         <h3>Financial statements (annual, as reported)</h3>
-        {financials && <FinancialsTable data={financials} />}
+        {financials ? (
+          <FinancialsTable data={financials} />
+        ) : profile && !profile.sec_coverage ? (
+          <p className="source-note">Not applicable — {profile.name} isn't an SEC operating-company filer (ETF).</p>
+        ) : null}
       </div>
 
-      <div className="panel">
-        <h3>Institutional ownership</h3>
-        <OwnershipPanel ticker={ticker} />
-      </div>
+      {profile && profile.sec_coverage && (
+        <div className="panel">
+          <h3>Institutional ownership</h3>
+          <OwnershipPanel ticker={ticker} />
+        </div>
+      )}
 
       <div className="panel">
         <h3>Recent SEC filings</h3>
-        <FilingsList filings={filings} showAllFilings={showAllFilings} onToggleShowAll={toggleShowAll} />
+        {profile && !profile.sec_coverage ? (
+          <p className="source-note">Not applicable — {profile.name} isn't an SEC operating-company filer (ETF).</p>
+        ) : (
+          <FilingsList filings={filings} showAllFilings={showAllFilings} onToggleShowAll={toggleShowAll} />
+        )}
       </div>
 
       {profile && (

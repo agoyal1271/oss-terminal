@@ -73,12 +73,29 @@ def company_overview(ticker: str):
         # (name, instrument type) instead of 404ing outright; callers that
         # need financials/filings/ownership get an explicit explanation
         # from those routes' own _resolve_or_404, not a crash here.
+        #
+        # Fill every field the frontend's CompanyProfile type expects
+        # (even ones that don't apply) rather than omitting them -- the
+        # frontend does `profile.exchanges.join(...)` unconditionally, and
+        # a missing key there is `undefined`, not an empty array, which
+        # crashes the page. Confirmed live: this was the exact cause of
+        # the options page showing broken for an ETF.
+        instrument_type = row.get("instrument_type") or "ETF"
         return {
             "ticker": row["ticker"],
             "name": row.get("title"),
             "cik": None,
             "cik_str": None,
-            "instrument_type": row.get("instrument_type"),
+            "sic": None,
+            "sic_description": instrument_type,
+            "exchanges": [],
+            "ein": None,
+            "category": f"{instrument_type} -- not an SEC operating-company filer",
+            "fiscal_year_end": None,
+            "website": None,
+            "investor_website": None,
+            "address": None,
+            "instrument_type": instrument_type,
             "sec_coverage": False,
         }
     try:
