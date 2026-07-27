@@ -32,6 +32,7 @@ Usage:
 
 from __future__ import annotations
 
+import datetime
 import json
 import os
 import re
@@ -191,6 +192,80 @@ def parse_reply_question(text: str) -> str | None:
     return stripped or None
 
 
+MONTH_NAMES = {
+    "jan": 1, "january": 1, "feb": 2, "february": 2, "mar": 3, "march": 3,
+    "apr": 4, "april": 4, "may": 5, "jun": 6, "june": 6, "jul": 7, "july": 7,
+    "aug": 8, "august": 8, "sep": 9, "sept": 9, "september": 9, "oct": 10,
+    "october": 10, "nov": 11, "november": 11, "dec": 12, "december": 12,
+}
+_MONTH_DAY_RE = re.compile(
+    # \s* (not \s+) between month and day -- real input observed live had
+    # none at all: "Sept18th 2026" with no space before the day number.
+    r"\b(" + "|".join(MONTH_NAMES) + r")\.?\s*(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?\b",
+    re.IGNORECASE,
+)
+_NUMERIC_DATE_RE = re.compile(r"\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b")
+
+MAX_AUTO_HORIZON_DAYS = 120  # cap how far a detected date can widen the fetch -- avoid pulling months of thin-liquidity expirations off one offhand date mention
+
+
+def detect_target_horizon_days(question: str, today: datetime.date | None = None) -> int | None:
+    """Scans a follow-up question for an explicit date (e.g. "Sept 18th
+    2026", "9/18/2026") and, if found beyond the default two-week window,
+    returns how many days out to fetch instead so that expiration is
+    actually included.
+
+    Exists because of a real, observed failure: someone asked "?ask SOXL
+    sell put Sept18th 2026" and got a confident-sounding answer built
+    entirely from data through Aug 7 -- the default 14-day window doesn't
+    reach a September date at all, and nothing told the user that. This
+    doesn't try to be a general date parser (no relative phrases like
+    "next month" or "in 6 weeks") -- just the concrete pattern that
+    already broke once. A missed date still falls through to the default
+    window rather than erroring, since a best-effort near-term answer
+    beats no answer.
+    """
+    today = today or datetime.date.today()
+    target: datetime.date | None = None
+
+    m = _MONTH_DAY_RE.search(question)
+    if m:
+        month = MONTH_NAMES[m.group(1).lower()]
+        day = int(m.group(2))
+        year = int(m.group(3)) if m.group(3) else today.year
+        try:
+            candidate = datetime.date(year, month, day)
+        except ValueError:
+            candidate = None
+        if candidate and not m.group(3) and candidate < today:
+            # No year given and the date's already past this year -- assume next year.
+            candidate = datetime.date(year + 1, month, day)
+        target = candidate
+    else:
+        m = _NUMERIC_DATE_RE.search(question)
+        if m:
+            month, day = int(m.group(1)), int(m.group(2))
+            year_str = m.group(3)
+            year = today.year if not year_str else (2000 + int(year_str) if len(year_str) == 2 else int(year_str))
+            try:
+                candidate = datetime.date(year, month, day)
+            except ValueError:
+                candidate = None
+            if candidate and not year_str and candidate < today:
+                candidate = datetime.date(year + 1, month, day)
+            target = candidate
+
+    if target is None:
+        return None
+    days_out = (target - today).days
+    if days_out <= ask_lib.DEFAULT_HORIZON_DAYS:
+        return None  # already covered by the default window
+    # +7 day buffer: the mentioned date isn't necessarily itself a real
+    # expiration (options expire on specific weekdays), so widen slightly
+    # past it to make sure the nearest real expiration on/after it is included.
+    return min(days_out + 7, MAX_AUTO_HORIZON_DAYS)
+
+
 # Slack's chat.postMessage `text` field renders Slack's own "mrkdwn", not
 # standard Markdown: *single asterisks* for bold, no "#" header syntax,
 # and no native bullet rendering (a "- " or "* " just shows as a literal
@@ -209,18 +284,29 @@ SLACK_FORMATTING_INSTRUCTIONS = (
 def build_answer_prompt(ticker: str, extra_question: str) -> tuple[str, dict]:
     profile = ask_lib.resolve_ticker(ticker)
     name = profile.get("name") or ticker
+
+    # If the question names a specific date beyond the default two-week
+    # window (e.g. "sell put Sept 18th 2026"), widen the fetch to actually
+    # include it -- see detect_target_horizon_days's docstring for the
+    # real failure this fixes: the default window silently didn't cover a
+    # September question and nothing said so.
+    horizon = detect_target_horizon_days(extra_question) if extra_question else None
+    horizon = horizon or ask_lib.DEFAULT_HORIZON_DAYS
     window = ask_lib.fetch_json(
-        f"{ask_lib.BACKEND_URL}/api/companies/{ticker}/options/two-week?horizon_days={ask_lib.DEFAULT_HORIZON_DAYS}"
+        f"{ask_lib.BACKEND_URL}/api/companies/{ticker}/options/two-week?horizon_days={horizon}"
     )
     prompt = ask_lib.build_prompt(ticker, name, window)
     if extra_question:
         prompt += (
             f"\n\nADDITIONAL QUESTION FROM THE USER: {extra_question}\n"
-            "Address this directly as part of your answer, still grounded only in the data above -- "
-            "if the data above doesn't cover it, say so rather than guessing."
+            "Address this directly as part of your answer, still grounded only in the data above. "
+            "The DATA above covers every expiration through "
+            f"{window['expirations'][-1]['expiration_date'] if window.get('expirations') else 'the near term'} "
+            "only -- if the question is about a date beyond that, say so explicitly rather than answering "
+            "as if it were covered."
         )
     prompt += SLACK_FORMATTING_INSTRUCTIONS
-    return prompt, {"name": name, "window": window}
+    return prompt, {"name": name, "window": window, "horizon_days": horizon}
 
 
 def to_slack_mrkdwn(text: str) -> str:
@@ -276,7 +362,12 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
         answer = answer[:MAX_REPLY_CHARS] + "\n\n_(truncated)_"
 
     watchlist_note = f"\n_Added {ticker} to the daily scan watchlist._" if added else ""
-    reply = f"*{meta['name']} ({ticker})* — {link}\n\n{answer}{watchlist_note}"
+    horizon_note = (
+        f"\n_Widened the window to {meta['horizon_days']} days to cover the date in your question._"
+        if meta.get("horizon_days", ask_lib.DEFAULT_HORIZON_DAYS) > ask_lib.DEFAULT_HORIZON_DAYS
+        else ""
+    )
+    reply = f"*{meta['name']} ({ticker})* — {link}\n\n{answer}{watchlist_note}{horizon_note}"
     post_message(channel_id, reply, thread_ts=thread_ts)
     print(f"  done, posted {len(answer)} chars")
     return ticker
