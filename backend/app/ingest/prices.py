@@ -24,6 +24,43 @@ RANGE_MAP = {
 }
 
 
+def resolve_via_yahoo(ticker: str) -> dict | None:
+    """Lightweight existence + display-name check via this same keyless
+    chart endpoint -- no SEC dependency, which is exactly why it exists:
+    SEC's company_tickers.json only covers operating-company 10-K/10-Q
+    filers. Most ETFs (SOXL, NUGT, ...) are registered investment
+    companies filing under a different regime entirely and are absent
+    from that file (confirmed live -- /api/search returns zero results
+    for either), even though Yahoo has full price/options data for them.
+    Used as a fallback so price/options endpoints work for ETFs while
+    financials/filings/ownership (which genuinely need a CIK) still don't
+    pretend to.
+    """
+    url = CHART_URL.format(symbol=ticker.upper())
+    data = cached_get_json(
+        namespace="yahoo_prices",
+        url=url,
+        ttl=settings.ttl_prices,
+        headers={"User-Agent": "Mozilla/5.0 (compatible; OSS-Terminal/0.1)"},
+        params={"range": "5d", "interval": "1d"},
+    )
+    result = (data.get("chart") or {}).get("result") or []
+    if not result:
+        return None
+    meta = result[0].get("meta", {})
+    symbol = meta.get("symbol")
+    if not symbol:
+        return None
+    return {
+        "ticker": symbol.upper(),
+        "cik": None,
+        "cik_str": None,
+        "title": meta.get("longName") or meta.get("shortName") or symbol,
+        "instrument_type": meta.get("instrumentType"),
+        "source": "yahoo",
+    }
+
+
 def get_price_history(ticker: str, range_key: str = "1y") -> dict:
     yahoo_range, interval = RANGE_MAP.get(range_key, RANGE_MAP["1y"])
     url = CHART_URL.format(symbol=ticker.upper())

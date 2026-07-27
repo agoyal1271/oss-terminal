@@ -10,4 +10,5 @@ frontend/dist/
 .env
 scripts/.env
 scripts/.slackbot_state.json
+scripts/slackbot.log
 .DS_Store

@@ -18,10 +18,45 @@ router = APIRouter()
 
 
 def _resolve_or_404(ticker: str) -> dict:
+    """SEC-only resolution -- for routes that genuinely need a CIK
+    (financials, filings, ownership). If the ticker IS a real Yahoo
+    symbol just not an SEC operating-company filer (typically an ETF),
+    say so explicitly rather than a generic "unknown ticker"."""
     row = tickers_ingest.resolve(ticker)
-    if not row:
+    if row:
+        return row
+    try:
+        yahoo_row = prices_ingest.resolve_via_yahoo(ticker)
+    except UpstreamError:
+        yahoo_row = None
+    if yahoo_row:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"'{ticker}' isn't covered here -- it's not an SEC operating-company filer "
+                f"(likely an ETF: {yahoo_row['title']}), so financials/filings/ownership don't apply. "
+                f"Price and options data ARE available at /api/companies/{ticker}/prices and /options."
+            ),
+        )
+    raise HTTPException(status_code=404, detail=f"Unknown ticker '{ticker}'. Try /api/search?q=... first.")
+
+
+def _resolve_market_or_404(ticker: str) -> dict:
+    """For routes that only need price/options data (Yahoo), not SEC
+    filings -- tries SEC resolution first (keeps the real name/CIK for
+    equities), falls back to a lightweight Yahoo existence+name check so
+    ETFs like SOXL/NUGT resolve too. Yahoo-sourced rows have cik=None;
+    routes must not assume cik_str is present."""
+    row = tickers_ingest.resolve(ticker)
+    if row:
+        return row
+    try:
+        yahoo_row = prices_ingest.resolve_via_yahoo(ticker)
+    except UpstreamError:
+        yahoo_row = None
+    if not yahoo_row:
         raise HTTPException(status_code=404, detail=f"Unknown ticker '{ticker}'. Try /api/search?q=... first.")
-    return row
+    return yahoo_row
 
 
 @router.get("/search")
@@ -31,7 +66,21 @@ def search(q: str = Query(..., min_length=1), limit: int = 10):
 
 @router.get("/companies/{ticker}")
 def company_overview(ticker: str):
-    row = _resolve_or_404(ticker)
+    row = _resolve_market_or_404(ticker)
+    if not row.get("cik_str"):
+        # Yahoo-only resolution (typically an ETF) -- SEC's company-facts
+        # profile doesn't exist for these. Return what IS available
+        # (name, instrument type) instead of 404ing outright; callers that
+        # need financials/filings/ownership get an explicit explanation
+        # from those routes' own _resolve_or_404, not a crash here.
+        return {
+            "ticker": row["ticker"],
+            "name": row.get("title"),
+            "cik": None,
+            "cik_str": None,
+            "instrument_type": row.get("instrument_type"),
+            "sec_coverage": False,
+        }
     try:
         profile = filings_ingest.get_company_profile(row["cik_str"])
     except UpstreamError as exc:
@@ -40,6 +89,7 @@ def company_overview(ticker: str):
         "ticker": row["ticker"],
         "cik": row["cik"],
         "cik_str": row["cik_str"],
+        "sec_coverage": True,
         **profile,
     }
 
@@ -56,7 +106,7 @@ def company_financials(ticker: str):
 
 @router.get("/companies/{ticker}/prices")
 def company_prices(ticker: str, range: str = Query("1y", alias="range")):
-    _resolve_or_404(ticker)  # validate against SEC universe even though price comes from Yahoo
+    _resolve_market_or_404(ticker)  # SEC OR Yahoo -- price data itself is Yahoo either way
     try:
         return prices_ingest.get_price_history(ticker, range_key=range)
     except UpstreamError as exc:
@@ -87,7 +137,7 @@ def company_ownership(ticker: str):
 
 @router.get("/companies/{ticker}/options")
 def company_options(ticker: str, expiration: int | None = None):
-    row = _resolve_or_404(ticker)
+    row = _resolve_market_or_404(ticker)
     try:
         return options_ingest.get_options_chain(row["ticker"], expiration)
     except UpstreamError as exc:
@@ -98,7 +148,7 @@ def company_options(ticker: str, expiration: int | None = None):
 
 @router.get("/companies/{ticker}/options/term-structure")
 def company_options_term_structure(ticker: str, max_expirations: int = 8):
-    row = _resolve_or_404(ticker)
+    row = _resolve_market_or_404(ticker)
     try:
         return options_ingest.get_iv_term_structure(row["ticker"], max_expirations=max_expirations)
     except UpstreamError as exc:
@@ -113,7 +163,7 @@ def company_options_two_week(ticker: str, horizon_days: int = 14):
     up/down/sideways evidence tally -- what scripts/ask.py turns into a
     ready-to-run local-LLM prompt. Public (not secret-gated) like the rest
     of the /companies routes; it reads the same upstream data they do."""
-    row = _resolve_or_404(ticker)
+    row = _resolve_market_or_404(ticker)
     try:
         return two_week.get_two_week_window(row["ticker"], horizon_days=horizon_days)
     except UpstreamError as exc:
@@ -124,7 +174,7 @@ def company_options_two_week(ticker: str, horizon_days: int = 14):
 
 @router.get("/companies/{ticker}/options/iv-rank")
 def company_options_iv_rank(ticker: str):
-    row = _resolve_or_404(ticker)
+    row = _resolve_market_or_404(ticker)
     return options_ingest.get_iv_rank(row["ticker"])
 
 
