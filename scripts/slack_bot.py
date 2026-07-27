@@ -75,7 +75,7 @@ load_dotenv(ENV_PATH)
 SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN", "")
 SLACK_CHANNEL = os.environ.get("SLACK_CHANNEL", "")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.2")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "martain7r/finance-llama-8b:q4_k_m")
 POLL_INTERVAL_SECONDS = int(os.environ.get("POLL_INTERVAL_SECONDS", "20"))
 COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX", "?ask").lower()
 
@@ -309,6 +309,44 @@ def build_answer_prompt(ticker: str, extra_question: str) -> tuple[str, dict]:
     return prompt, {"name": name, "window": window, "horizon_days": horizon}
 
 
+# Deterministic backstop for the "no advice / no invented Greeks" prompt
+# rule -- added after observing TWO different models violate it despite
+# the exact same explicit, twice-repeated instruction: llama3.2 invented
+# options Greeks that were never in the prompt, and finance-llama-8b
+# (ironically, given its finance fine-tuning) told the user "it may be a
+# wise decision to sell puts" -- an outright trade recommendation. Prompt
+# wording alone clearly isn't reliable enough on its own; this scans the
+# actual output before it gets posted and flags it visibly rather than
+# silently trusting it. Patterns are deliberately specific (action verb +
+# option type, or an explicit recommendation phrase) to avoid flagging
+# this app's own legitimate descriptive language -- "put/call ratio" and
+# "expected move" are never false positives here.
+_ADVICE_PATTERNS = [
+    re.compile(r"\b(buy|sell|long|short|go long|go short)\s+(a\s+|the\s+)?(call|put)s?\b", re.IGNORECASE),
+    re.compile(r"\b(covered call|protective collar|bear put spread|bull call spread|iron condor|"
+               r"credit spread|debit spread|calendar spread|straddle|strangle)\b", re.IGNORECASE),
+    re.compile(r"\b(I recommend|I suggest|you should|it('s| is)? (a )?(wise|good|smart) (decision|idea|move|trade|strategy)|"
+               r"consider (buying|selling))\b", re.IGNORECASE),
+]
+_GREEKS_PATTERN = re.compile(r"\b(delta|gamma|theta|vega)\b", re.IGNORECASE)
+
+
+def check_advice_violations(text: str) -> list[str]:
+    """Returns a list of human-readable reasons if `text` looks like it
+    broke the no-advice/no-invented-Greeks rule, else an empty list. Not
+    a guarantee of catching everything (regex over free text never is),
+    but a real backstop for the two concrete failure modes already
+    observed live -- see the comment above."""
+    reasons = []
+    for pattern in _ADVICE_PATTERNS:
+        if pattern.search(text):
+            reasons.append("possible strategy/trade recommendation")
+            break
+    if _GREEKS_PATTERN.search(text):
+        reasons.append("mentions options Greeks (never provided in the data)")
+    return reasons
+
+
 def to_slack_mrkdwn(text: str) -> str:
     """Best-effort cleanup of standard Markdown into real Slack mrkdwn --
     a safety net for when the model doesn't fully follow
@@ -357,6 +395,7 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
         post_message(channel_id, f"Local Ollama couldn't answer this one: {exc}", thread_ts=thread_ts)
         return None
 
+    violations = check_advice_violations(answer)
     answer = to_slack_mrkdwn(answer.strip())
     if len(answer) > MAX_REPLY_CHARS:
         answer = answer[:MAX_REPLY_CHARS] + "\n\n_(truncated)_"
@@ -367,8 +406,17 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
         if meta.get("horizon_days", ask_lib.DEFAULT_HORIZON_DAYS) > ask_lib.DEFAULT_HORIZON_DAYS
         else ""
     )
-    reply = f"*{meta['name']} ({ticker})* — {link}\n\n{answer}{watchlist_note}{horizon_note}"
+    warning = (
+        f"⚠️ *This response may not follow house style* ({'; '.join(violations)}) -- "
+        "this is a research tool, not investment advice; treat any strategy language or figures not "
+        "explicitly listed above with extra caution.\n\n"
+        if violations
+        else ""
+    )
+    reply = f"{warning}*{meta['name']} ({ticker})* — {link}\n\n{answer}{watchlist_note}{horizon_note}"
     post_message(channel_id, reply, thread_ts=thread_ts)
+    if violations:
+        print(f"  WARNING: flagged output -- {violations}")
     print(f"  done, posted {len(answer)} chars")
     return ticker
 

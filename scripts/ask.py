@@ -213,7 +213,7 @@ def main() -> None:
     parser.add_argument("--horizon", type=int, default=DEFAULT_HORIZON_DAYS, help=f"options window in days (default {DEFAULT_HORIZON_DAYS})")
     parser.add_argument("--copy", action="store_true", help="copy the prompt to clipboard (macOS)")
     parser.add_argument("--run", action="store_true", help="run the prompt against local Ollama and print the answer")
-    parser.add_argument("--model", default="llama3.2")
+    parser.add_argument("--model", default="martain7r/finance-llama-8b:q4_k_m")
     parser.add_argument("--ollama-url", default="http://localhost:11434")
     parser.add_argument("--no-watchlist", action="store_true", help="skip registering this ticker in data/watchlist.json")
     args = parser.parse_args()
