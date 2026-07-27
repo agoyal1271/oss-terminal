@@ -33,21 +33,41 @@ BACKEND_URL = os.environ.get("BACKEND_URL", "https://backend-gules-iota-44.verce
 SECRET = os.environ.get("IV_SNAPSHOT_SECRET", "")  # same trust boundary as the IV snapshot endpoint
 SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
 
-# IV_WATCHLIST (backend/app/ingest/options.py) + the tickers tracked in
-# ~/stock-pivot-tracker, per the approved plan. NUGT (a Direxion leveraged
-# ETF) was in the original tracker list but is dropped here: it isn't in
-# SEC's company_tickers.json at all (that file covers operating-company
-# filers, not most ETFs -- confirmed live, /api/search?q=NUGT returns zero
-# results and /api/companies/NUGT 404s), so it's not resolvable by ANY
-# endpoint in this app today, not just scanning. Watchlisting a ticker
-# that can never succeed would just be a permanent phantom failure in the
-# daily digest -- the exact kind of noise this scanner exists to avoid.
-WATCHLIST = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "JPM", "BRK-B", "BMNR", "COIN"]
+# Base watchlist: IV_WATCHLIST (backend/app/ingest/options.py) + the
+# tickers tracked in ~/stock-pivot-tracker, per the approved plan. NUGT (a
+# Direxion leveraged ETF) was in the original tracker list but is dropped
+# here: it isn't in SEC's company_tickers.json at all (that file covers
+# operating-company filers, not most ETFs -- confirmed live,
+# /api/search?q=NUGT returns zero results and /api/companies/NUGT 404s), so
+# it's not resolvable by ANY endpoint in this app today, not just scanning.
+# Watchlisting a ticker that can never succeed would just be a permanent
+# phantom failure in the daily digest -- the exact kind of noise this
+# scanner exists to avoid.
+BASE_WATCHLIST = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "JPM", "BRK-B", "BMNR", "COIN"]
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCANS_DIR = REPO_ROOT / "data" / "scans"
 SCAN_STATE_DIR = REPO_ROOT / "data" / "scan-state"
 COOLDOWN_PATH = SCAN_STATE_DIR / "cooldowns.json"
+WATCHLIST_PATH = REPO_ROOT / "data" / "watchlist.json"
+
+
+def load_watchlist() -> list[str]:
+    """Base list plus anything scripts/ask.py registered when someone asked
+    to analyze a ticker not already covered -- so "analyze SNOW" once means
+    SNOW gets a daily scan from then on, not just today's one-off lookup."""
+    extra: list[str] = []
+    if WATCHLIST_PATH.exists():
+        try:
+            data = json.loads(WATCHLIST_PATH.read_text())
+            if isinstance(data, list):
+                extra = [t.upper() for t in data]
+        except json.JSONDecodeError:
+            pass
+    return sorted(set(BASE_WATCHLIST) | set(extra))
+
+
+WATCHLIST = load_watchlist()
 
 COOLDOWN_DAYS = {"critical": 1, "warn": 3, "info": 7}
 MAX_FINDINGS_POSTED = 25

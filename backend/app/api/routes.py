@@ -12,6 +12,7 @@ from app.ingest import ownership as ownership_ingest
 from app.ingest import filing_content as filing_content_ingest
 from app.ingest import options as options_ingest
 from app.signals import detect as detect_signals
+from app.signals import two_week
 
 router = APIRouter()
 
@@ -100,6 +101,21 @@ def company_options_term_structure(ticker: str, max_expirations: int = 8):
     row = _resolve_or_404(ticker)
     try:
         return options_ingest.get_iv_term_structure(row["ticker"], max_expirations=max_expirations)
+    except UpstreamError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/companies/{ticker}/options/two-week")
+def company_options_two_week(ticker: str, horizon_days: int = 14):
+    """Every expiration inside a two-week horizon plus the deterministic
+    up/down/sideways evidence tally -- what scripts/ask.py turns into a
+    ready-to-run local-LLM prompt. Public (not secret-gated) like the rest
+    of the /companies routes; it reads the same upstream data they do."""
+    row = _resolve_or_404(ticker)
+    try:
+        return two_week.get_two_week_window(row["ticker"], horizon_days=horizon_days)
     except UpstreamError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except ValueError as exc:

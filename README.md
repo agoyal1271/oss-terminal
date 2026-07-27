@@ -416,10 +416,226 @@ npm run dev
 
 Open http://localhost:5173.
 
+## Daily scanner (push, not pull)
+
+Everything above is pull-based — it only helps on days you remember to open
+it. The scanner inverts that: something checks a watchlist every weekday and
+pings Slack when there's something worth looking at, so the app becomes
+where you go *after* the ping, not the thing you have to remember.
+
+### Why two layers, split the way they are
+
+The hard constraint driving this design: **Claude cloud-agent egress is
+GitHub-only** (`raw.githubusercontent.com` + `api.github.com` — everything
+else 403s). A prior cloud routine in this account (an ETH on-chain
+indicator) tried to fetch market data directly from the cloud and has been
+posting 30-day-old data as fact for weeks, because its actual source went
+stale and it had no other host to fall back to. Any design where the
+*reasoning* agent also does the *fetching* runs straight into that wall.
+
+So it's split along exactly that boundary:
+
+```
+LAYER 1 — DETECT     GitHub Action, full internet, 20:45 UTC weekdays
+  scripts/scan_signals.py
+    → calls the backend per ticker (app/signals/detect.py does the actual
+      rule evaluation), diffing against yesterday's committed state
+    → writes data/scans/{date}.json + latest.json, data/scan-state/*.json
+    → posts a plain baseline digest to Slack — this is the reliable
+      fallback that works even if Layer 2 never runs
+
+LAYER 2 — TRIAGE      Claude cloud routine, 22:00 UTC weekdays
+    → reads data/scans/latest.json from raw.githubusercontent.com
+      (the one host it can reach)
+    → reasons across the findings -- connects a ticker's options signal to
+      its filing signal, groups repeated patterns across tickers, decides
+      what's actually worth reading vs. what to skip
+    → posts the synthesized narrative to #equity-alerts via Slack MCP
+```
+
+Layer 1 fetches where the internet exists; Layer 2 reasons where only
+GitHub is reachable. The repo commit is the handoff, which also makes
+every day's scan auditable in git history. Layer 2's routine is
+`trig_01EKeSsBWTrQj8yGBN4PukzW` — manage/inspect it at
+https://claude.ai/code/routines. Scheduled 20:45 UTC (Layer 1) / 22:00 UTC
+(Layer 2) — Layer 1 deliberately runs *before* `iv-snapshot.yml`'s 21:00
+UTC slot, not after: the IV-jump signal below compares today's fresh IV
+against the last *committed* entry in `data/iv-history/`, and running after
+the snapshot job would make that comparison trivially compare today
+against itself.
+
+### Signal catalog
+
+Ported from the thresholds already shipping in the UI (`technicals.ts`,
+`optionsAnalysis.ts`) to `backend/app/signals/*.py` — same formulas, so the
+scanner can't disagree with what the Technical Read / options charts show
+for the same ticker the same day. The one deliberate difference: the UI
+only needs today's reading, the scanner needs yesterday's too, so it can
+fire on a **transition** rather than a **state** — see below.
+
+| Signal | Threshold | Severity | Needs prior-day state? |
+|---|---|---|---|
+| Golden / death cross **occurring** | 50-day SMA crosses 200-day SMA today | warn | no — one price fetch gives today + yesterday |
+| RSI **crosses into** extreme | crosses ≥70 or ≤30 today | info | no |
+| 52-week high/low **break** | close beats the *prior* window's extreme | warn | no |
+| Volume spike | 10d avg ÷ 50d baseline ≥ 2.0 | info | no |
+| Unusual options activity | ~30-day-tenor contract, volume ≥ 1,000 and ≥3× open interest, top 3 by volume | warn | no |
+| IV term structure **flips into** backwardation | front-month IV > next × 1.15, newly | warn | yes (`data/scan-state/`) |
+| IV skew **flips to** inverted | call-wing IV > put-wing IV by >0.03, newly | warn | yes |
+| ATM IV day-over-day jump | ≥ +20% relative | warn | yes (reuses `data/iv-history/`) |
+| P/C volume ratio deviates from its own baseline | >1.5× or <0.5× its own 10-day mean | info | yes |
+| IV rank extreme | >80 or <20 | info | reuses the IV-rank accumulator above |
+| Critical 8-K | item ∈ {1.03 bankruptcy, 4.02 restatement, 3.01 delisting, 1.05 cyber} | critical | no — date-filtered |
+| Material 8-K | item ∈ {2.06 impairment, 5.02 exec change, 5.01 control change, 2.01 M&A} | warn | no |
+| New 13D/G | activist stake or large position change filed today | warn | no |
+| Insider cluster | ≥3 Form 4s in the trailing 5 days | info | no |
+
+**A real bug this caught, worth knowing about:** the first version scanned
+the *nearest* expiration for unusual activity and flagged **16 findings for
+one ticker** on the first live test. The nearest chain is often a
+same-week-expiring weekly, where volume dwarfing open interest is the
+*structural norm* — weeklies reset OI every week — not an anomaly. Fixed by
+scanning the ~30-day tenor instead (same tenor the IV snapshot job already
+uses, for the same reason: comparable day to day) with a ratio-based
+threshold. Went from 16 findings to 2 genuinely meaningful ones.
+
+### Noise control
+
+1. **Transitions, not states** — the single biggest lever; see the table above.
+2. **Per-`(ticker, signal)` cooldown**: critical 1 day, warn 3 days, info 7
+   days, keyed by a stable fingerprint (`AAPL.golden_cross`). Info findings
+   suppressed by cooldown resurface once, grouped, in a **Friday roundup**
+   rather than never.
+3. **Capped at 25 findings pushed per run**, with an overflow line.
+4. **Silence must be trustworthy.** If every ticker fails outright, that's a
+   broken pipeline, not a quiet day — `scan_signals.py` posts a loud failure
+   alert and exits nonzero instead of committing an empty scan that would
+   look identical to "nothing happened." Layer 2 does the equivalent check
+   on the read side: if `latest.json` is more than a day stale, it posts
+   that fact instead of a normal-looking digest built from old data —
+   directly modeled on how the ETH routine's staleness went unnoticed.
+
+### Watchlist
+
+Base list (`BASE_WATCHLIST` in `scripts/scan_signals.py`, mirrors
+`IV_WATCHLIST` in `backend/app/ingest/options.py`) plus the tickers tracked
+in `~/stock-pivot-tracker`: `AAPL, MSFT, NVDA, GOOGL, AMZN, TSLA, JPM,
+BRK-B, BMNR, COIN`. `NUGT` (a Direxion leveraged ETF) was in the original
+tracker list but isn't watchlisted here — confirmed live that it isn't in
+SEC's `company_tickers.json` at all, so it's unresolvable by *any* endpoint
+in this app today, not just the scanner. Watchlisting a ticker that can
+never succeed would just be a permanent phantom failure in the daily
+digest.
+
+The watchlist is no longer fixed at deploy time — `data/watchlist.json`
+(committed to the repo, unioned with the base list at scan time) extends it,
+and `scripts/ask.py` writes to that file automatically whenever someone
+asks about a ticker that isn't covered yet. See "Ask about any stock" below.
+
+### Ask about any stock (`scripts/ask.py`)
+
+The scanner above only watches a fixed list. This is the on-demand
+counterpart — analyze *any* resolvable ticker right now, not just wait for
+tomorrow's scan:
+
+```
+python scripts/ask.py SNOW              # link + a ready-to-run prompt
+python scripts/ask.py SNOW --run        # ...and run it against local Ollama
+python scripts/ask.py SNOW --copy       # ...and copy the prompt to the clipboard (macOS)
+```
+
+What it does, in order:
+
+1. Resolves the ticker against the backend (same SEC-universe check every
+   endpoint uses — an unresolvable name like `NUGT` fails loudly here
+   instead of producing an empty prompt).
+2. Registers it in `data/watchlist.json` if it isn't already covered — so
+   asking about a name once means it gets a real daily scan from then on,
+   not just today's one-off lookup. This only edits the file locally; it
+   deliberately does **not** `git commit`/`push` on your behalf (that's a
+   decision to make explicitly, since it touches the shared public repo) —
+   it prints the exact command to run when you're ready.
+3. Fetches `GET /api/companies/{ticker}/options/two-week`
+   (`backend/app/signals/two_week.py`) — every options expiration inside
+   the next 14 days, not just the single nearest one the company page
+   shows. The interesting part of a multi-week view is usually how the
+   weeks *differ* — one expiration carrying much richer IV than its
+   neighbors is the market pricing a dated event into that specific week.
+4. Builds a prompt that asks the model to do two things: **(a)** classify
+   the outlook into exactly three buckets — UP / DOWN / SIDEWAYS — and
+   **(b)** call out unusual contract activity, distinguishing genuinely new
+   positioning from the normal weekly open-interest reset.
+
+**The bucket evidence is computed in Python, not invented by the model.**
+`two_week.py` deterministically buckets every signal (trend structure,
+RSI, put/call flow, skew, event-week IV pricing, new options positioning)
+into the case(s) it supports, each with a stated reason — the same
+deterministic-detection / LLM-narration split the two-layer scanner above
+uses, and for the same reason: an LLM handed a raw options chain will
+happily invent a confident bull case out of nothing. Some evidence
+honestly supports two buckets at once (RSI < 30 is both "oversold bounce
+setup" and "sustained selling") and is recorded in both rather than forced
+into one — the tally is an evidence count, never a probability or a
+prediction, and the prompt says so explicitly. This is also the shared
+logic the planned Slack Q&A bot (`?ask SNOW ...`) will call into.
+
+### Setup still needed
+
+- **`SLACK_WEBHOOK_URL`** isn't set as a GitHub Actions secret yet, so
+  Layer 1's baseline digest currently only prints to the Action's log
+  rather than posting. Layer 2 (Slack MCP, no webhook needed) does post
+  live already. Add the secret (`gh secret set SLACK_WEBHOOK_URL --repo
+  agoyal1271/oss-terminal`) to turn on the baseline digest too — the whole
+  point of having it is as a fallback independent of Layer 2, so it's worth
+  doing even though Layer 2 already works.
+
+### Signal correctness — Python ports checked against the shipping TypeScript
+
+`backend/app/signals/technicals.py` and `options_signals.py` are hand-ports
+of `frontend/src/technicals.ts` and `optionsAnalysis.ts` — same formulas,
+so the scanner can't disagree with what the UI shows. That's the claim the
+comments make; until now it was never actually verified, which is exactly
+the kind of thing that goes silently wrong (a threshold typo, an off-by-one
+window) without ever crashing.
+
+`backend/tests/test_signal_parity.py` closes that gap: it `tsc`-compiles
+the real `technicals.ts`/`optionsAnalysis.ts` to plain JS, calls the exact
+same functions from Python via a tiny stdio harness
+(`backend/tests/ts_harness/run.js`), and asserts the two languages produce
+identical numbers on identical fixture input — SMA/RSI/ATR% at multiple
+periods and trend shapes, term-structure backwardation detection, and skew
+direction. It also cross-checks the two things that make the Python
+version deliberately *different* from the TS one (it carries yesterday's
+values too, for transition detection) by comparing Python's `_prev` fields
+against TS recomputed on the series with the last bar removed — the trick
+that would catch an indexing bug the single-series checks alone couldn't.
+
+```
+cd backend && ./venv/bin/pip install -r requirements-dev.txt
+./venv/bin/pytest tests/ -v
+```
+
+Requires `node`/`npx` on `PATH`; skips (not fails) the parity module if
+they're missing, so the suite is still usable without a JS toolchain
+installed. Verified this isn't a vacuous pass by deliberately injecting a
+wrong threshold and confirming the tests fail — they did, immediately.
+
 ## Roadmap (not built yet)
 
 This is Phase 1 of the plan discussed. Later phases:
 
+- **Slack Q&A bot.** A local daemon polling `#equity-alerts`, so anyone in
+  the workspace can ask "?ask SNOW anything unusual?" and get an answer
+  from local Ollama (not the account's Claude) built on the same
+  `two_week.py` evidence tally `scripts/ask.py` uses standalone today —
+  this is the missing "wire it into Slack" step, the analysis logic
+  already exists and is tested.
+- **Forward-return tracking.** Every scan already commits dated findings to
+  `data/scans/` — a job that checks what price actually did 5/20 trading
+  days after each finding and reports a per-signal hit-rate, honestly
+  caveated (overlapping windows on a 10-ticker watchlist is not a backtest,
+  and under ~30 occurrences per signal it should refuse to conclude
+  anything).
 - **Phase 2 — Screener + macro.** Requires bulk XBRL ingestion (SEC's daily
   bulk `companyfacts.zip`) into a real datastore (Postgres/DuckDB) so queries
   can run across the whole universe instead of one ticker at a time. Add FRED

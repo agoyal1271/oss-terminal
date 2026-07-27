@@ -2,7 +2,11 @@ import type { PricePoint } from "./api/client";
 
 export type Signal = "bullish" | "bearish" | "neutral";
 
-function sma(values: (number | null)[], period: number): (number | null)[] {
+// Exported (only) so backend/tests/test_signal_parity.py can call the exact
+// same formulas the UI uses -- see that file for why this cross-language
+// check exists (technicals.py is a hand-port and was never verified
+// against this file until that test was added).
+export function sma(values: (number | null)[], period: number): (number | null)[] {
   const out: (number | null)[] = new Array(values.length).fill(null);
   let sum = 0;
   let count = 0;
@@ -25,7 +29,7 @@ function sma(values: (number | null)[], period: number): (number | null)[] {
 }
 
 // Wilder's RSI (the standard 14-period formula used by most charting platforms).
-function rsi(closes: number[], period = 14): (number | null)[] {
+export function rsi(closes: number[], period = 14): (number | null)[] {
   const out: (number | null)[] = new Array(closes.length).fill(null);
   if (closes.length < period + 1) return out;
 
@@ -51,7 +55,7 @@ function rsi(closes: number[], period = 14): (number | null)[] {
   return out;
 }
 
-function averageTrueRangePct(points: PricePoint[], period = 14): number | null {
+export function averageTrueRangePct(points: PricePoint[], period = 14): number | null {
   if (points.length < period + 1) return null;
   const trueRanges: number[] = [];
   for (let i = 1; i < points.length; i++) {
