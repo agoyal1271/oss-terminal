@@ -6,5 +6,13 @@
   "TSLA.unusual_activity.TSLA260828P00255000": "2026-07-26",
   "JPM.new_52w_high": "2026-07-26",
   "BMNR.insider_cluster.30": "2026-07-26",
-  "COIN.term_structure_backwardation": "2026-07-26"
+  "COIN.term_structure_backwardation": "2026-07-26",
+  "AAPL.new_52w_high": "2026-07-27",
+  "AMZN.term_structure_backwardation": "2026-07-27",
+  "BMNR.insider_cluster.31": "2026-07-27",
+  "JPM.rsi_overbought": "2026-07-27",
+  "NVDA.unusual_activity.NVDA260828C00200000": "2026-07-27",
+  "NVDA.unusual_activity.NVDA260828P00165000": "2026-07-27",
+  "TSLA.unusual_activity.TSLA260828C00310000": "2026-07-27",
+  "TSLA.unusual_activity.TSLA260828P00200000": "2026-07-27"
 }
