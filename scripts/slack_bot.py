@@ -5,10 +5,18 @@ reply back in a thread. Runs entirely on this laptop; nobody's Claude
 account is involved, and nothing is exposed to the public internet -- it's
 an outbound-polling client, not a server.
 
-Reuses every piece of scripts/ask.py (ticker resolution, the two-week
-options window, the classify-and-flag-unusual-activity prompt, the Ollama
-call) rather than reimplementing any of it, so the Slack answer and the
-terminal `python scripts/ask.py TICKER` answer are always the same logic.
+Reuses every piece of scripts/ask.py (ticker resolution, the Ollama call,
+and both prompts it builds) rather than reimplementing any of it, so the
+Slack answer and the terminal answer are always the same logic. A bare
+`?ask TICKER` gets the fast classify-into-up/down/sideways-and-flag-
+unusual-activity prompt (two-week window). `?ask TICKER <question>` (or
+any reply in a thread the bot already answered in) instead goes through
+ask.py's build_strategy_prompt -- base/bull/bear price outlook, what the
+options chain implies, IV rank, liquid strikes/expirations, delta/theta/
+OI, probability of profit, 5/10/15% sensitivity, event risk, premium vs.
+spread -- for any ticker and whatever horizon(s) the question names (or a
+~3/~6 month default if it names none; the answer says so explicitly and
+invites a correction rather than guessing silently).
 
 Config via environment variables (or a `.env` file next to this script --
 see scripts/.env.example). Required:
@@ -20,7 +28,7 @@ see scripts/.env.example). Required:
 
 Optional (defaults shown):
   OLLAMA_URL=http://localhost:11434
-  OLLAMA_MODEL=llama3.2
+  OLLAMA_MODEL=martain7r/finance-llama-8b:q4_k_m
   POLL_INTERVAL_SECONDS=20
   COMMAND_PREFIX=?ask
   BACKEND_URL / FRONTEND_URL -- same defaults as ask.py
@@ -32,7 +40,6 @@ Usage:
 
 from __future__ import annotations
 
-import datetime
 import json
 import os
 import re
@@ -192,78 +199,12 @@ def parse_reply_question(text: str) -> str | None:
     return stripped or None
 
 
-MONTH_NAMES = {
-    "jan": 1, "january": 1, "feb": 2, "february": 2, "mar": 3, "march": 3,
-    "apr": 4, "april": 4, "may": 5, "jun": 6, "june": 6, "jul": 7, "july": 7,
-    "aug": 8, "august": 8, "sep": 9, "sept": 9, "september": 9, "oct": 10,
-    "october": 10, "nov": 11, "november": 11, "dec": 12, "december": 12,
-}
-_MONTH_DAY_RE = re.compile(
-    # \s* (not \s+) between month and day -- real input observed live had
-    # none at all: "Sept18th 2026" with no space before the day number.
-    r"\b(" + "|".join(MONTH_NAMES) + r")\.?\s*(\d{1,2})(?:st|nd|rd|th)?(?:,?\s+(\d{4}))?\b",
-    re.IGNORECASE,
-)
-_NUMERIC_DATE_RE = re.compile(r"\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b")
-
-MAX_AUTO_HORIZON_DAYS = 120  # cap how far a detected date can widen the fetch -- avoid pulling months of thin-liquidity expirations off one offhand date mention
-
-
-def detect_target_horizon_days(question: str, today: datetime.date | None = None) -> int | None:
-    """Scans a follow-up question for an explicit date (e.g. "Sept 18th
-    2026", "9/18/2026") and, if found beyond the default two-week window,
-    returns how many days out to fetch instead so that expiration is
-    actually included.
-
-    Exists because of a real, observed failure: someone asked "?ask SOXL
-    sell put Sept18th 2026" and got a confident-sounding answer built
-    entirely from data through Aug 7 -- the default 14-day window doesn't
-    reach a September date at all, and nothing told the user that. This
-    doesn't try to be a general date parser (no relative phrases like
-    "next month" or "in 6 weeks") -- just the concrete pattern that
-    already broke once. A missed date still falls through to the default
-    window rather than erroring, since a best-effort near-term answer
-    beats no answer.
-    """
-    today = today or datetime.date.today()
-    target: datetime.date | None = None
-
-    m = _MONTH_DAY_RE.search(question)
-    if m:
-        month = MONTH_NAMES[m.group(1).lower()]
-        day = int(m.group(2))
-        year = int(m.group(3)) if m.group(3) else today.year
-        try:
-            candidate = datetime.date(year, month, day)
-        except ValueError:
-            candidate = None
-        if candidate and not m.group(3) and candidate < today:
-            # No year given and the date's already past this year -- assume next year.
-            candidate = datetime.date(year + 1, month, day)
-        target = candidate
-    else:
-        m = _NUMERIC_DATE_RE.search(question)
-        if m:
-            month, day = int(m.group(1)), int(m.group(2))
-            year_str = m.group(3)
-            year = today.year if not year_str else (2000 + int(year_str) if len(year_str) == 2 else int(year_str))
-            try:
-                candidate = datetime.date(year, month, day)
-            except ValueError:
-                candidate = None
-            if candidate and not year_str and candidate < today:
-                candidate = datetime.date(year + 1, month, day)
-            target = candidate
-
-    if target is None:
-        return None
-    days_out = (target - today).days
-    if days_out <= ask_lib.DEFAULT_HORIZON_DAYS:
-        return None  # already covered by the default window
-    # +7 day buffer: the mentioned date isn't necessarily itself a real
-    # expiration (options expire on specific weekdays), so widen slightly
-    # past it to make sure the nearest real expiration on/after it is included.
-    return min(days_out + 7, MAX_AUTO_HORIZON_DAYS)
+# Horizon/date parsing ("Sept 18th 2026", "3 months", "3- to 6-month") lives
+# in ask.py's parse_horizons_days now, shared with the CLI's --question flag,
+# so a date mentioned in a Slack thread and the same date typed at the
+# terminal resolve to the same day count rather than two regimes drifting
+# apart. See ask.py's parse_horizons_days docstring for what it does and
+# deliberately doesn't attempt.
 
 
 # Slack's chat.postMessage `text` field renders Slack's own "mrkdwn", not
@@ -282,68 +223,82 @@ SLACK_FORMATTING_INSTRUCTIONS = (
 
 
 def build_answer_prompt(ticker: str, extra_question: str) -> tuple[str, dict]:
+    """Bare `?ask TICKER` (no question) keeps the fast classify-and-flag
+    path: fetch the two-week window, build_prompt. A real follow-up
+    question -- which is most of what actually gets asked in a thread --
+    instead goes through ask_lib.build_strategy_prompt, which can answer
+    price-outlook, options-chain, Greeks/POP, sensitivity, and event-risk
+    questions for any horizon(s) the question names (see its docstring).
+    Both paths are ask.py's logic, reused as-is, so the Slack answer and
+    the terminal answer are never two different code paths."""
     profile = ask_lib.resolve_ticker(ticker)
     name = profile.get("name") or ticker
 
-    # If the question names a specific date beyond the default two-week
-    # window (e.g. "sell put Sept 18th 2026"), widen the fetch to actually
-    # include it -- see detect_target_horizon_days's docstring for the
-    # real failure this fixes: the default window silently didn't cover a
-    # September question and nothing said so.
-    horizon = detect_target_horizon_days(extra_question) if extra_question else None
-    horizon = horizon or ask_lib.DEFAULT_HORIZON_DAYS
+    if extra_question:
+        prompt, meta = ask_lib.build_strategy_prompt(ticker, name, extra_question)
+        prompt += SLACK_FORMATTING_INSTRUCTIONS
+        return prompt, meta
+
     window = ask_lib.fetch_json(
-        f"{ask_lib.BACKEND_URL}/api/companies/{ticker}/options/two-week?horizon_days={horizon}"
+        f"{ask_lib.BACKEND_URL}/api/companies/{ticker}/options/two-week?horizon_days={ask_lib.DEFAULT_HORIZON_DAYS}"
     )
     prompt = ask_lib.build_prompt(ticker, name, window)
-    if extra_question:
-        prompt += (
-            f"\n\nADDITIONAL QUESTION FROM THE USER: {extra_question}\n"
-            "Address this directly as part of your answer, still grounded only in the data above. "
-            "The DATA above covers every expiration through "
-            f"{window['expirations'][-1]['expiration_date'] if window.get('expirations') else 'the near term'} "
-            "only -- if the question is about a date beyond that, say so explicitly rather than answering "
-            "as if it were covered."
-        )
     prompt += SLACK_FORMATTING_INSTRUCTIONS
-    return prompt, {"name": name, "window": window, "horizon_days": horizon}
+    return prompt, {"name": name, "window": window, "horizon_days": ask_lib.DEFAULT_HORIZON_DAYS}
 
 
-# Deterministic backstop for the "no advice / no invented Greeks" prompt
-# rule -- added after observing TWO different models violate it despite
-# the exact same explicit, twice-repeated instruction: llama3.2 invented
-# options Greeks that were never in the prompt, and finance-llama-8b
-# (ironically, given its finance fine-tuning) told the user "it may be a
-# wise decision to sell puts" -- an outright trade recommendation. Prompt
-# wording alone clearly isn't reliable enough on its own; this scans the
-# actual output before it gets posted and flags it visibly rather than
-# silently trusting it. Patterns are deliberately specific (action verb +
-# option type, or an explicit recommendation phrase) to avoid flagging
-# this app's own legitimate descriptive language -- "put/call ratio" and
-# "expected move" are never false positives here.
-_ADVICE_PATTERNS = [
+# Deterministic backstop for the "no advice" prompt rule -- added after
+# observing TWO different models violate it despite the exact same
+# explicit, twice-repeated instruction: llama3.2 invented options Greeks
+# that weren't in that prompt's data, and finance-llama-8b (ironically,
+# given its finance fine-tuning) told the user "it may be a wise decision
+# to sell puts" -- an outright trade recommendation. Prompt wording alone
+# clearly isn't reliable enough; this scans the actual output before it
+# gets posted and flags it visibly rather than silently trusting it.
+#
+# Split into two tiers because build_strategy_prompt (ask.py) changed what
+# "off-rules" means: the classify-and-flag prompt (build_prompt) never
+# provides Greeks or names a strategy, so ANY mention there is invented.
+# build_strategy_prompt deliberately DOES compute and expect both --
+# "long call", "call debit spread", real delta/theta values -- as the
+# answer to what was asked. Running the strategy-name/Greeks patterns
+# against a strategy answer would flag nearly every legitimate response,
+# which defeats the backstop through alarm fatigue rather than serving it.
+# An explicit recommendation ("you should...", "I suggest...") is still
+# never acceptable from either prompt, so that tier always applies.
+_RECOMMENDATION_PATTERNS = [
+    re.compile(r"\b(I recommend|I suggest|you should|it('s| is)? (a )?(wise|good|smart) (decision|idea|move|trade|strategy)|"
+               r"consider (buying|selling))\b", re.IGNORECASE),
+]
+_STRATEGY_NAME_PATTERNS = [
     re.compile(r"\b(buy|sell|long|short|go long|go short)\s+(a\s+|the\s+)?(call|put)s?\b", re.IGNORECASE),
     re.compile(r"\b(covered call|protective collar|bear put spread|bull call spread|iron condor|"
                r"credit spread|debit spread|calendar spread|straddle|strangle)\b", re.IGNORECASE),
-    re.compile(r"\b(I recommend|I suggest|you should|it('s| is)? (a )?(wise|good|smart) (decision|idea|move|trade|strategy)|"
-               r"consider (buying|selling))\b", re.IGNORECASE),
 ]
 _GREEKS_PATTERN = re.compile(r"\b(delta|gamma|theta|vega)\b", re.IGNORECASE)
 
 
-def check_advice_violations(text: str) -> list[str]:
+def check_advice_violations(text: str, is_strategy_answer: bool = False) -> list[str]:
     """Returns a list of human-readable reasons if `text` looks like it
-    broke the no-advice/no-invented-Greeks rule, else an empty list. Not
-    a guarantee of catching everything (regex over free text never is),
-    but a real backstop for the two concrete failure modes already
-    observed live -- see the comment above."""
+    broke a no-advice rule, else an empty list. Not a guarantee of
+    catching everything (regex over free text never is), but a real
+    backstop for the concrete failure modes already observed live -- see
+    the comment above. `is_strategy_answer` should be True when the
+    answer came from build_strategy_prompt (its meta dict has
+    "horizons_days") -- Greeks and strategy names are expected there and
+    are only flagged for the classify-and-flag prompt's answers."""
     reasons = []
-    for pattern in _ADVICE_PATTERNS:
+    for pattern in _RECOMMENDATION_PATTERNS:
         if pattern.search(text):
-            reasons.append("possible strategy/trade recommendation")
+            reasons.append("possible trade recommendation")
             break
-    if _GREEKS_PATTERN.search(text):
-        reasons.append("mentions options Greeks (never provided in the data)")
+    if not is_strategy_answer:
+        for pattern in _STRATEGY_NAME_PATTERNS:
+            if pattern.search(text):
+                reasons.append("mentions a specific options strategy (never suggested in this prompt's data)")
+                break
+        if _GREEKS_PATTERN.search(text):
+            reasons.append("mentions options Greeks (never provided in this prompt's data)")
     return reasons
 
 
@@ -395,17 +350,23 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
         post_message(channel_id, f"Local Ollama couldn't answer this one: {exc}", thread_ts=thread_ts)
         return None
 
-    violations = check_advice_violations(answer)
+    is_strategy_answer = "horizons_days" in meta  # build_strategy_prompt's meta shape vs. build_prompt's
+    violations = check_advice_violations(answer, is_strategy_answer=is_strategy_answer)
     answer = to_slack_mrkdwn(answer.strip())
     if len(answer) > MAX_REPLY_CHARS:
         answer = answer[:MAX_REPLY_CHARS] + "\n\n_(truncated)_"
 
     watchlist_note = f"\n_Added {ticker} to the daily scan watchlist._" if added else ""
-    horizon_note = (
-        f"\n_Widened the window to {meta['horizon_days']} days to cover the date in your question._"
-        if meta.get("horizon_days", ask_lib.DEFAULT_HORIZON_DAYS) > ask_lib.DEFAULT_HORIZON_DAYS
-        else ""
-    )
+    if is_strategy_answer:
+        horizons_str = ", ".join(f"~{d}d" for d in meta["horizons_days"])
+        assumed_str = " (assumed -- none was named in the question, ask again with a specific timeframe to change it)" if meta.get("horizons_assumed") else ""
+        horizon_note = f"\n_Horizon(s) used: {horizons_str}{assumed_str}._"
+    else:
+        horizon_note = (
+            f"\n_Widened the window to {meta['horizon_days']} days to cover the date in your question._"
+            if meta.get("horizon_days", ask_lib.DEFAULT_HORIZON_DAYS) > ask_lib.DEFAULT_HORIZON_DAYS
+            else ""
+        )
     warning = (
         f"⚠️ *This response may not follow house style* ({'; '.join(violations)}) -- "
         "this is a research tool, not investment advice; treat any strategy language or figures not "

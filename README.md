@@ -542,6 +542,10 @@ tomorrow's scan:
 python scripts/ask.py SNOW              # link + a ready-to-run prompt
 python scripts/ask.py SNOW --run        # ...and run it against local Ollama
 python scripts/ask.py SNOW --copy       # ...and copy the prompt to the clipboard (macOS)
+
+# Free-text strategy/outlook question instead of the default classify-and-flag prompt --
+# see "Slack Q&A bot" below for the full list of what this can answer:
+python scripts/ask.py SPCX --question "base/bull/bear price outlook over the next 3 and 6 months" --run
 ```
 
 What it does, in order:
@@ -584,9 +588,39 @@ logic the Slack Q&A bot (`?ask SNOW ...`, below) calls into.
 A local daemon that polls `#equity-alerts` for `?ask TICKER [question]`,
 answers using local Ollama, and posts the reply in-thread — so anyone in
 the workspace can ask, not just whoever's running the terminal. It's a
-thin wrapper: ticker resolution, the two-week window, the evidence tally,
-and the Ollama call are all `scripts/ask.py`'s logic, reused as-is, so the
-Slack answer and the terminal answer are never two different code paths.
+thin wrapper: ticker resolution, the Ollama call, and both prompts below
+are all `scripts/ask.py`'s logic, reused as-is, so the Slack answer and
+the terminal answer are never two different code paths.
+
+A bare `?ask TICKER` gets the fast classify-and-flag prompt above. A real
+question — `?ask SPCX what's the base-case, bull-case, and bear-case price
+outlook over the next 3 months and 6 months?`, or any reply in a thread the
+bot already answered in — instead goes through `build_strategy_prompt`,
+which can answer:
+
+- base/bull/bear price outlook per horizon, framed off the options-implied
+  1-SD expected move (`spot ± IV × √t`), not a fabricated target
+- what the options chain implies about expected move, and whether IV/IV
+  rank is elevated or cheap versus this ticker's own recent history
+- the most liquid expirations and strikes for a given horizon, and which
+  ones have the best delta/theta/open interest for directional exposure
+- probability of profit, breakeven, max profit/loss for long calls, long
+  puts, and debit spreads (calendars are described qualitatively, not
+  given a fabricated POP — see the prompt's own caveat on this)
+- sensitivity to 5/10/15% moves and flat/up/down-by-expiration payoffs
+- event risk (recent SEC filings — this app has no earnings calendar, and
+  says so explicitly rather than guessing a date)
+
+Every Greek and probability figure is computed with Black-Scholes
+(`scripts/options_math.py`, stdlib-only, no scipy) from the contract's own
+quoted IV — Yahoo's chain has no Greeks field at all, so this is the only
+way to answer a delta/theta/POP question without the model inventing one,
+same "compute in Python, narrate in the prompt" split the evidence tally
+above uses. Horizons are parsed from the question itself ("3 months",
+"3- to 6-month", "Sept 18th 2026") and default to ~3/~6 months if none is
+named, with the assumption stated in the reply rather than applied
+silently. If a question needs a date/strike/target that truly isn't there,
+the prompt tells the model to ask rather than guess.
 
 Setup: copy `scripts/.env.example` to `scripts/.env` and fill in a Bot
 User OAuth Token (`xoxb-...`, **not** `xoxp-` — a user token posts as you,
