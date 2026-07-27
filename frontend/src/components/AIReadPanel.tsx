@@ -19,7 +19,7 @@ function buildPrompt(
   const lines: string[] = [
     `You are a research assistant summarizing publicly reported data about ${companyName} (${ticker}) for a retail investor.`,
     `Write 4-6 plain-English sentences covering both supportive and concerning signals in the data below.`,
-    `Do not give buy/sell advice, price targets, or a recommendation -- describe only what the data shows.`,
+    `RULES (do not break these, even if it feels natural to): Do not give buy/sell advice, price targets, or a recommendation. Do not mention or invent options Greeks (Delta, Gamma, Theta, Vega), analyst ratings, or any figure not explicitly listed below -- if something isn't listed, say it's not available rather than estimating or inventing it. Describe only what the data below shows.`,
     ``,
     `DATA:`,
   ];
@@ -49,6 +49,7 @@ function buildPrompt(
         `market-implied expected move by expiration ${s.expected_move_atm_straddle ? "$" + s.expected_move_atm_straddle.toFixed(2) : "n/a"}.`,
     );
   }
+  lines.push(``, `Reminder before you answer: no buy/sell advice, no price targets, no invented Greeks or figures -- only the numbers listed above.`);
   return lines.join("\n");
 }
 

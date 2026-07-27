@@ -141,6 +141,12 @@ def build_prompt(ticker: str, name: str, window: dict) -> str:
         "normal weekly open-interest reset (expiring this week, already flagged below -- discount those unless "
         "the size is extreme).",
         "",
+        "RULES (do not break these, even if it feels natural to): no buy/sell advice, no options strategies "
+        "(no \"buy calls\", \"long call\", \"bear put spread\", \"collar\", or similar). Do not mention or invent "
+        "options Greeks (Delta, Gamma, Theta, Vega) or any bid/ask price -- none are provided below and you must "
+        "not make them up. Use ONLY the numbers listed in DATA below; if something isn't listed, say it's not "
+        "available rather than estimating or inventing it.",
+        "",
         f"DATA (as of {window['as_of']}, underlying price ${window['underlying_price']}):",
         "",
         "Expirations in window:",
@@ -158,6 +164,10 @@ def build_prompt(ticker: str, name: str, window: dict) -> str:
     ]
     if ev.get("event_week"):
         lines.append(f"\nNote: {ev['event_week']} carries notably richer IV than the rest of the window -- the market is pricing a dated event into that specific week.")
+    lines.append(
+        "\nReminder before you answer: no buy/sell advice, no options strategies, no invented Greeks or prices -- "
+        "only the numbers listed above."
+    )
     return "\n".join(lines)
 
 

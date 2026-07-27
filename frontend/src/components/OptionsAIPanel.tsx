@@ -20,7 +20,7 @@ async function loadOptionsPrompt(ticker: string, chain: OptionsChain, companyNam
   const lines = [
     `You are a research assistant describing the options market for ${companyName} for a retail investor.`,
     `Write 5-7 plain-English sentences on what this options activity implies (sentiment lean, expected volatility, term structure shape, skew, notable positioning).`,
-    `Do not give buy/sell advice or recommend a specific options strategy -- describe only what the data shows.`,
+    `RULES (do not break these, even if it feels natural to): Do not give buy/sell advice or recommend a specific options strategy (no "buy calls", "long call", "bear put spread", "collar", or similar) -- describe only what the data shows. Do not mention or invent options Greeks (Delta, Gamma, Theta, Vega) or any bid/ask price -- none are provided below and you must not make them up. Use ONLY the numbers listed in DATA below; if something isn't listed, say it's not available rather than estimating or inventing it.`,
     ``,
     `DATA (expiration in ~${daysToExpiry} days, underlying price $${chain.underlying_price}):`,
     `- Put/call volume ratio: ${s.put_call_volume_ratio?.toFixed(2) ?? "n/a"} (>1 means more put volume than call volume today)`,
@@ -31,6 +31,8 @@ async function loadOptionsPrompt(ticker: string, chain: OptionsChain, companyNam
     termStructure ? `- IV term structure (across upcoming expirations): ${describeTermStructure(termStructure.points).summary}` : `- IV term structure: unavailable`,
     `- Highest-volume calls: ${topByVolume(chain.calls) || "none"}`,
     `- Highest-volume puts: ${topByVolume(chain.puts) || "none"}`,
+    ``,
+    `Reminder before you answer: no buy/sell advice, no options strategies, no invented Greeks or prices -- only the numbers listed above.`,
   ];
   return lines.join("\n");
 }
