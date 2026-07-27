@@ -37,6 +37,16 @@ DEFAULT_HORIZON_DAYS = 14
 UNUSUAL_MIN_VOLUME = 1000
 UNUSUAL_OI_MULTIPLE = 3
 
+# Yahoo returns a near-zero implied vol (not null) for a contract with no
+# live quote (bid == ask == 0) -- observed live on a real ticker: real IV
+# ~76% during market hours, ~0.4% minutes later once quotes went stale.
+# That's a liquidity artifact, not a market view, and taking it at face
+# value would let a garbage reading masquerade as "the market is pricing
+# an event" evidence. No real listed US equity option prices at a fraction
+# of a percent IV, so this floor exists purely to catch degenerate/stale
+# quotes, not to express an opinion about what counts as "low" IV.
+MIN_PLAUSIBLE_IV = 0.03
+
 
 def _expirations_within(expiration_dates: list[int], horizon_days: int) -> list[int]:
     now = datetime.datetime.now(datetime.timezone.utc).timestamp()
@@ -70,12 +80,20 @@ def _summarize_expiration(chain: dict) -> dict:
         if skew.call_wing_iv is not None and skew.put_wing_iv is not None
         else None
     )
+    atm_iv = (sum(ivs) / len(ivs)) if ivs else None
+    if atm_iv is not None and atm_iv < MIN_PLAUSIBLE_IV:
+        # Yahoo returns a near-zero IV (not null) for a contract with no
+        # live quote -- a liquidity artifact, not a real market reading.
+        # Treat it the same as missing data rather than show a fake
+        # percentage (see MIN_PLAUSIBLE_IV above).
+        atm_iv = None
+
     return {
         "expiration": expiration,
         "expiration_date": datetime.date.fromtimestamp(expiration).isoformat(),
         "days_out": _days_out(expiration),
         "atm_strike": s.get("atm_strike"),
-        "atm_iv": (sum(ivs) / len(ivs)) if ivs else None,
+        "atm_iv": atm_iv,
         "call_iv": s.get("atm_call_iv"),
         "put_iv": s.get("atm_put_iv"),
         "expected_move": expected_move,
@@ -140,7 +158,7 @@ def _build_evidence(points: list[dict], unusual: list[dict], tech, underlying: f
     sideways: list[dict] = []
 
     # --- Term shape inside the window -------------------------------------
-    ivs = [(p["days_out"], p["atm_iv"]) for p in points if p["atm_iv"] is not None]
+    ivs = [(p["days_out"], p["atm_iv"]) for p in points if p["atm_iv"] is not None and p["atm_iv"] >= MIN_PLAUSIBLE_IV]
     event_week = None
     if len(ivs) >= 2:
         peak_days, peak_iv = max(ivs, key=lambda x: x[1])
