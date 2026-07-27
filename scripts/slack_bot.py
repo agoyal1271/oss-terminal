@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import time
 import traceback
@@ -165,6 +166,21 @@ def parse_command(text: str) -> tuple[str, str] | None:
     return candidate, extra
 
 
+# Slack's chat.postMessage `text` field renders Slack's own "mrkdwn", not
+# standard Markdown: *single asterisks* for bold, no "#" header syntax,
+# and no native bullet rendering (a "- " or "* " just shows as a literal
+# character). A model that writes normal Markdown -- which is what most
+# are trained on -- produces visibly broken output in Slack ("**Task
+# 1**" shows literal asterisks). Tell it explicitly, and back that up with
+# to_slack_mrkdwn() below as a safety net, since a 3B local model won't
+# always follow formatting instructions precisely.
+SLACK_FORMATTING_INSTRUCTIONS = (
+    "\n\nFORMAT your answer for Slack, not standard Markdown: use *single asterisks* for bold "
+    "(never **double asterisks**), use plain dashes or the bullet character • for lists "
+    "(never # or ## headers), and keep paragraphs short."
+)
+
+
 def build_answer_prompt(ticker: str, extra_question: str) -> tuple[str, dict]:
     profile = ask_lib.resolve_ticker(ticker)
     name = profile.get("name") or ticker
@@ -178,7 +194,29 @@ def build_answer_prompt(ticker: str, extra_question: str) -> tuple[str, dict]:
             "Address this directly as part of your answer, still grounded only in the data above -- "
             "if the data above doesn't cover it, say so rather than guessing."
         )
+    prompt += SLACK_FORMATTING_INSTRUCTIONS
     return prompt, {"name": name, "window": window}
+
+
+def to_slack_mrkdwn(text: str) -> str:
+    """Best-effort cleanup of standard Markdown into real Slack mrkdwn --
+    a safety net for when the model doesn't fully follow
+    SLACK_FORMATTING_INSTRUCTIONS above. Not a full parser, just the
+    patterns actually observed in local-model output: "# " headers,
+    "**bold**", and "* "/"+ " bullets."""
+    lines = []
+    for line in text.split("\n"):
+        header = re.match(r"^(#{1,6})\s+(.*)$", line)
+        if header:
+            lines.append(f"*{header.group(2).strip()}*")
+            continue
+        bullet = re.match(r"^(\s*)[*+]\s+(.*)$", line)
+        if bullet:
+            lines.append(f"{bullet.group(1)}• {bullet.group(2)}")
+            continue
+        lines.append(line)
+    result = "\n".join(lines)
+    return re.sub(r"\*\*(.+?)\*\*", r"*\1*", result)
 
 
 def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts: str) -> None:
@@ -206,6 +244,7 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
         post_message(channel_id, f"Local Ollama couldn't answer this one: {exc}", thread_ts=thread_ts)
         return
 
+    answer = to_slack_mrkdwn(answer.strip())
     if len(answer) > MAX_REPLY_CHARS:
         answer = answer[:MAX_REPLY_CHARS] + "\n\n_(truncated)_"
 
