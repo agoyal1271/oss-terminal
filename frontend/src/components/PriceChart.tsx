@@ -22,6 +22,31 @@ function calculatePivotPoints(high: number, low: number, close: number): PivotLe
   };
 }
 
+function getPreviousWeeklyBar(points: any[]): any | null {
+  if (points.length < 2) return null;
+  const lastDate = new Date(points[points.length - 1].date);
+  for (let i = points.length - 2; i >= 0; i--) {
+    const pointDate = new Date(points[i].date);
+    if (lastDate.getTime() - pointDate.getTime() >= 2 * 24 * 60 * 60 * 1000) {
+      return points[i];
+    }
+  }
+  return null;
+}
+
+function getPreviousMonthlyBar(points: any[]): any | null {
+  if (points.length < 2) return null;
+  const lastDate = new Date(points[points.length - 1].date);
+  const lastMonth = lastDate.getMonth();
+  for (let i = points.length - 2; i >= 0; i--) {
+    const pointDate = new Date(points[i].date);
+    if (pointDate.getMonth() !== lastMonth) {
+      return points[i];
+    }
+  }
+  return null;
+}
+
 const RANGES = [
   { key: "1m", label: "1M" },
   { key: "6m", label: "6M" },
@@ -34,7 +59,9 @@ export function PriceChart({ ticker }: { ticker: string }) {
   const [range, setRange] = useState("1y");
   const [data, setData] = useState<PriceHistory | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showPivots, setShowPivots] = useState(true);
+  const [showDaily, setShowDaily] = useState(true);
+  const [showWeekly, setShowWeekly] = useState(true);
+  const [showMonthly, setShowMonthly] = useState(false);
 
   useEffect(() => {
     setData(null);
@@ -45,14 +72,40 @@ export function PriceChart({ ticker }: { ticker: string }) {
   const points = (data?.points ?? []).map((p) => ({ date: p.date, close: p.close }));
   const isUp = points.length > 1 && points[points.length - 1].close >= points[0].close;
 
-  // Calculate pivot points from yesterday's OHLC (second-to-last point if available)
-  const pivots: PivotLevels | null =
+  // Calculate daily pivot points (yesterday's OHLC)
+  const dailyPivots: PivotLevels | null =
     data?.points && data.points.length >= 2
       ? (() => {
           const yesterday = data.points[data.points.length - 2];
           const high = yesterday.high ?? data.fifty_two_week_high;
           const low = yesterday.low ?? data.fifty_two_week_low;
           const close = yesterday.close;
+          return calculatePivotPoints(high, low, close);
+        })()
+      : null;
+
+  // Calculate weekly pivot points (previous week's OHLC)
+  const weeklyPivots: PivotLevels | null =
+    data?.points
+      ? (() => {
+          const prevWeek = getPreviousWeeklyBar(data.points);
+          if (!prevWeek) return null;
+          const high = prevWeek.high ?? data.fifty_two_week_high;
+          const low = prevWeek.low ?? data.fifty_two_week_low;
+          const close = prevWeek.close;
+          return calculatePivotPoints(high, low, close);
+        })()
+      : null;
+
+  // Calculate monthly pivot points (previous month's OHLC)
+  const monthlyPivots: PivotLevels | null =
+    data?.points
+      ? (() => {
+          const prevMonth = getPreviousMonthlyBar(data.points);
+          if (!prevMonth) return null;
+          const high = prevMonth.high ?? data.fifty_two_week_high;
+          const low = prevMonth.low ?? data.fifty_two_week_low;
+          const close = prevMonth.close;
           return calculatePivotPoints(high, low, close);
         })()
       : null;
@@ -74,11 +127,27 @@ export function PriceChart({ ticker }: { ticker: string }) {
               {r.label}
             </button>
           ))}
-          {pivots && (
-            <label style={{ marginLeft: "12px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "var(--text-secondary)" }}>
-              <input type="checkbox" checked={showPivots} onChange={(e) => setShowPivots(e.target.checked)} style={{ cursor: "pointer" }} />
-              Pivot Points
-            </label>
+          {(dailyPivots || weeklyPivots || monthlyPivots) && (
+            <div style={{ marginLeft: "12px", display: "flex", alignItems: "center", gap: "12px", fontSize: "13px" }}>
+              {dailyPivots && (
+                <label style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--text-secondary)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={showDaily} onChange={(e) => setShowDaily(e.target.checked)} />
+                  Daily
+                </label>
+              )}
+              {weeklyPivots && (
+                <label style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--text-secondary)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={showWeekly} onChange={(e) => setShowWeekly(e.target.checked)} />
+                  Weekly
+                </label>
+              )}
+              {monthlyPivots && (
+                <label style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--text-secondary)", cursor: "pointer" }}>
+                  <input type="checkbox" checked={showMonthly} onChange={(e) => setShowMonthly(e.target.checked)} />
+                  Monthly
+                </label>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -111,13 +180,33 @@ export function PriceChart({ ticker }: { ticker: string }) {
             />
             <Area type="monotone" dataKey="close" stroke={isUp ? "var(--series-1)" : "var(--danger)"} strokeWidth={2} fill="url(#priceFill)" />
 
-            {showPivots && pivots && (
+            {showDaily && dailyPivots && (
               <>
-                <ReferenceLine y={pivots.r2} stroke="var(--danger)" strokeDasharray="4 4" opacity={0.6} label={{ value: `R2 ${fmtUsd(pivots.r2, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
-                <ReferenceLine y={pivots.r1} stroke="var(--series-2)" strokeDasharray="4 4" opacity={0.6} label={{ value: `R1 ${fmtUsd(pivots.r1, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
-                <ReferenceLine y={pivots.pivot} stroke="var(--series-3)" strokeWidth={1} opacity={0.7} label={{ value: `P ${fmtUsd(pivots.pivot, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11, fontWeight: 600 }} />
-                <ReferenceLine y={pivots.s1} stroke="var(--series-2)" strokeDasharray="4 4" opacity={0.6} label={{ value: `S1 ${fmtUsd(pivots.s1, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
-                <ReferenceLine y={pivots.s2} stroke="var(--danger)" strokeDasharray="4 4" opacity={0.6} label={{ value: `S2 ${fmtUsd(pivots.s2, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
+                <ReferenceLine y={dailyPivots.r2} stroke="var(--danger)" strokeDasharray="4 4" strokeWidth={1} opacity={0.4} />
+                <ReferenceLine y={dailyPivots.r1} stroke="var(--series-2)" strokeDasharray="4 4" strokeWidth={1} opacity={0.4} />
+                <ReferenceLine y={dailyPivots.pivot} stroke="var(--series-3)" strokeWidth={0.5} opacity={0.35} />
+                <ReferenceLine y={dailyPivots.s1} stroke="var(--series-2)" strokeDasharray="4 4" strokeWidth={1} opacity={0.4} />
+                <ReferenceLine y={dailyPivots.s2} stroke="var(--danger)" strokeDasharray="4 4" strokeWidth={1} opacity={0.4} />
+              </>
+            )}
+
+            {showWeekly && weeklyPivots && (
+              <>
+                <ReferenceLine y={weeklyPivots.r2} stroke="var(--danger)" strokeDasharray="4 4" strokeWidth={1.5} opacity={0.7} label={{ value: `WR2 ${fmtUsd(weeklyPivots.r2, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
+                <ReferenceLine y={weeklyPivots.r1} stroke="var(--series-2)" strokeDasharray="4 4" strokeWidth={1.5} opacity={0.7} label={{ value: `WR1 ${fmtUsd(weeklyPivots.r1, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
+                <ReferenceLine y={weeklyPivots.pivot} stroke="var(--series-3)" strokeWidth={1.5} opacity={0.8} label={{ value: `WP ${fmtUsd(weeklyPivots.pivot, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11, fontWeight: 600 }} />
+                <ReferenceLine y={weeklyPivots.s1} stroke="var(--series-2)" strokeDasharray="4 4" strokeWidth={1.5} opacity={0.7} label={{ value: `WS1 ${fmtUsd(weeklyPivots.s1, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
+                <ReferenceLine y={weeklyPivots.s2} stroke="var(--danger)" strokeDasharray="4 4" strokeWidth={1.5} opacity={0.7} label={{ value: `WS2 ${fmtUsd(weeklyPivots.s2, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
+              </>
+            )}
+
+            {showMonthly && monthlyPivots && (
+              <>
+                <ReferenceLine y={monthlyPivots.r2} stroke="var(--danger)" strokeWidth={2.5} opacity={0.8} label={{ value: `MR2 ${fmtUsd(monthlyPivots.r2, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 12, fontWeight: 700 }} />
+                <ReferenceLine y={monthlyPivots.r1} stroke="var(--series-2)" strokeWidth={2.5} opacity={0.8} label={{ value: `MR1 ${fmtUsd(monthlyPivots.r1, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 12, fontWeight: 700 }} />
+                <ReferenceLine y={monthlyPivots.pivot} stroke="var(--series-3)" strokeWidth={2.5} opacity={0.9} label={{ value: `MP ${fmtUsd(monthlyPivots.pivot, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 12, fontWeight: 700 }} />
+                <ReferenceLine y={monthlyPivots.s1} stroke="var(--series-2)" strokeWidth={2.5} opacity={0.8} label={{ value: `MS1 ${fmtUsd(monthlyPivots.s1, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 12, fontWeight: 700 }} />
+                <ReferenceLine y={monthlyPivots.s2} stroke="var(--danger)" strokeWidth={2.5} opacity={0.8} label={{ value: `MS2 ${fmtUsd(monthlyPivots.s2, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 12, fontWeight: 700 }} />
               </>
             )}
           </AreaChart>
