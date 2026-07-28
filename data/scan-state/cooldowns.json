@@ -14,5 +14,21 @@
   "NVDA.unusual_activity.NVDA260828C00200000": "2026-07-27",
   "NVDA.unusual_activity.NVDA260828P00165000": "2026-07-27",
   "TSLA.unusual_activity.TSLA260828C00310000": "2026-07-27",
-  "TSLA.unusual_activity.TSLA260828P00200000": "2026-07-27"
+  "TSLA.unusual_activity.TSLA260828P00200000": "2026-07-27",
+  "AAPL.unusual_activity.AAPL260828P00320000": "2026-07-28",
+  "AAPL.iv_rank_high": "2026-07-28",
+  "AMZN.iv_rank_low": "2026-07-28",
+  "BRK-B.iv_rank_low": "2026-07-28",
+  "GLD.unusual_activity.GLD260828C00402000": "2026-07-28",
+  "GLD.unusual_activity.GLD260828C00404000": "2026-07-28",
+  "GLD.term_structure_backwardation": "2026-07-28",
+  "GOOGL.unusual_activity.GOOGL260828C00390000": "2026-07-28",
+  "GOOGL.iv_rank_low": "2026-07-28",
+  "JPM.iv_rank_high": "2026-07-28",
+  "MSFT.unusual_activity.MSFT260828P00375000": "2026-07-28",
+  "MSFT.unusual_activity.MSFT260828C00415000": "2026-07-28",
+  "MSFT.iv_rank_low": "2026-07-28",
+  "NVDA.iv_rank_low": "2026-07-28",
+  "SPCX.skew_inverted": "2026-07-28",
+  "TSLA.iv_rank_low": "2026-07-28"
 }

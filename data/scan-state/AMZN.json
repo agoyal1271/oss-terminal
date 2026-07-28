@@ -1,9 +1,10 @@
 {
-  "date": "2026-07-27",
+  "date": "2026-07-28",
   "pc_ratio_history": [
     0.5209713024282561,
-    0.6951476793248945
+    0.6951476793248945,
+    0.45064935064935063
   ],
   "term_structure_event": true,
-  "skew_direction": "flat"
+  "skew_direction": "normal"
 }
