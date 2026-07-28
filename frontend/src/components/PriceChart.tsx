@@ -1,7 +1,26 @@
 import { useEffect, useState } from "react";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, type PriceHistory } from "../api/client";
 import { fmtUsd } from "../format";
+
+interface PivotLevels {
+  pivot: number;
+  r1: number;
+  r2: number;
+  s1: number;
+  s2: number;
+}
+
+function calculatePivotPoints(high: number, low: number, close: number): PivotLevels {
+  const pivot = (high + low + close) / 3;
+  return {
+    pivot,
+    r1: 2 * pivot - low,
+    r2: pivot + (high - low),
+    s1: 2 * pivot - high,
+    s2: pivot - (high - low),
+  };
+}
 
 const RANGES = [
   { key: "1m", label: "1M" },
@@ -15,6 +34,7 @@ export function PriceChart({ ticker }: { ticker: string }) {
   const [range, setRange] = useState("1y");
   const [data, setData] = useState<PriceHistory | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showPivots, setShowPivots] = useState(true);
 
   useEffect(() => {
     setData(null);
@@ -24,6 +44,18 @@ export function PriceChart({ ticker }: { ticker: string }) {
 
   const points = (data?.points ?? []).map((p) => ({ date: p.date, close: p.close }));
   const isUp = points.length > 1 && points[points.length - 1].close >= points[0].close;
+
+  // Calculate pivot points from yesterday's OHLC (second-to-last point if available)
+  const pivots: PivotLevels | null =
+    data?.points && data.points.length >= 2
+      ? (() => {
+          const yesterday = data.points[data.points.length - 2];
+          const high = yesterday.high ?? data.fifty_two_week_high;
+          const low = yesterday.low ?? data.fifty_two_week_low;
+          const close = yesterday.close;
+          return calculatePivotPoints(high, low, close);
+        })()
+      : null;
 
   return (
     <div>
@@ -42,6 +74,12 @@ export function PriceChart({ ticker }: { ticker: string }) {
               {r.label}
             </button>
           ))}
+          {pivots && (
+            <label style={{ marginLeft: "12px", display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", color: "var(--text-secondary)" }}>
+              <input type="checkbox" checked={showPivots} onChange={(e) => setShowPivots(e.target.checked)} style={{ cursor: "pointer" }} />
+              Pivot Points
+            </label>
+          )}
         </div>
       </div>
 
@@ -72,6 +110,16 @@ export function PriceChart({ ticker }: { ticker: string }) {
               formatter={(value) => [fmtUsd(Number(value)), "Close"]}
             />
             <Area type="monotone" dataKey="close" stroke={isUp ? "var(--series-1)" : "var(--danger)"} strokeWidth={2} fill="url(#priceFill)" />
+
+            {showPivots && pivots && (
+              <>
+                <ReferenceLine y={pivots.r2} stroke="var(--danger)" strokeDasharray="4 4" opacity={0.6} label={{ value: `R2 ${fmtUsd(pivots.r2, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
+                <ReferenceLine y={pivots.r1} stroke="var(--series-2)" strokeDasharray="4 4" opacity={0.6} label={{ value: `R1 ${fmtUsd(pivots.r1, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
+                <ReferenceLine y={pivots.pivot} stroke="var(--series-3)" strokeWidth={1} opacity={0.7} label={{ value: `P ${fmtUsd(pivots.pivot, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11, fontWeight: 600 }} />
+                <ReferenceLine y={pivots.s1} stroke="var(--series-2)" strokeDasharray="4 4" opacity={0.6} label={{ value: `S1 ${fmtUsd(pivots.s1, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
+                <ReferenceLine y={pivots.s2} stroke="var(--danger)" strokeDasharray="4 4" opacity={0.6} label={{ value: `S2 ${fmtUsd(pivots.s2, 0)}`, position: "right", fill: "var(--text-muted)", fontSize: 11 }} />
+              </>
+            )}
           </AreaChart>
         </ResponsiveContainer>
       )}
