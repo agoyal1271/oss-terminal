@@ -30,5 +30,16 @@
   "MSFT.iv_rank_low": "2026-07-28",
   "NVDA.iv_rank_low": "2026-07-28",
   "SPCX.skew_inverted": "2026-07-28",
-  "TSLA.iv_rank_low": "2026-07-28"
+  "TSLA.iv_rank_low": "2026-07-28",
+  "AAPL.iv_rank_low": "2026-07-29",
+  "AMZN.iv_rank_high": "2026-07-29",
+  "BMNR.skew_inverted": "2026-07-29",
+  "BRK-B.golden_cross": "2026-07-29",
+  "BRK-B.iv_rank_high": "2026-07-29",
+  "GOOGL.term_structure_backwardation": "2026-07-29",
+  "GOOGL.insider_cluster.31": "2026-07-29",
+  "JPM.term_structure_backwardation": "2026-07-29",
+  "MSFT.iv_rank_high": "2026-07-29",
+  "MSFT.8k.0001193125-26-323632": "2026-07-29",
+  "TSLA.unusual_activity.TSLA260828C00305000": "2026-07-29"
 }
