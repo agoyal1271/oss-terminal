@@ -34,5 +34,14 @@
     "atm_strike": 190.0,
     "call_iv": 0.5117236328125,
     "put_iv": 0.4555718505859375
+  },
+  {
+    "ticker": "NVDA",
+    "date": "2026-07-30",
+    "expiration": 1787875200,
+    "underlying_price": 195.04,
+    "atm_strike": 195.0,
+    "call_iv": 0.4679008288574219,
+    "put_iv": 0.4338435522460938
   }
 ]
