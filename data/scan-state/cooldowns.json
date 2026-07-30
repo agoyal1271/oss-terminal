@@ -41,5 +41,17 @@
   "JPM.term_structure_backwardation": "2026-07-29",
   "MSFT.iv_rank_high": "2026-07-29",
   "MSFT.8k.0001193125-26-323632": "2026-07-29",
-  "TSLA.unusual_activity.TSLA260828C00305000": "2026-07-29"
+  "TSLA.unusual_activity.TSLA260828C00305000": "2026-07-29",
+  "AAPL.8k.0000320193-26-000018": "2026-07-30",
+  "AMZN.8k.0001018724-26-000024": "2026-07-30",
+  "COIN.skew_inverted": "2026-07-30",
+  "COIN.8k.0001679788-26-000087": "2026-07-30",
+  "GLD.unusual_activity.GLD260828P00340000": "2026-07-30",
+  "GOOGL.unusual_activity.GOOGL260828P00300000": "2026-07-30",
+  "GOOGL.iv_rank_high": "2026-07-30",
+  "MSFT.rsi_overbought": "2026-07-30",
+  "MSFT.unusual_activity.MSFT260828C00530000": "2026-07-30",
+  "NVDA.iv_rank_high": "2026-07-30",
+  "SNOW.rsi_overbought": "2026-07-30",
+  "SNOW.new_52w_high": "2026-07-30"
 }
