@@ -1,7 +1,8 @@
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://127.0.0.1:8000/api";
 
 export interface TickerResult {
-  cik: number;
+  // null for ETFs resolved via Yahoo (not an SEC operating-company filer).
+  cik: number | null;
   cik_str: string;
   ticker: string;
   title: string;

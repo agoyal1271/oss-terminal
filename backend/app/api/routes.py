@@ -61,7 +61,31 @@ def _resolve_market_or_404(ticker: str) -> dict:
 
 @router.get("/search")
 def search(q: str = Query(..., min_length=1), limit: int = 10):
-    return {"results": tickers_ingest.search(q, limit=limit)}
+    results = tickers_ingest.search(q, limit=limit)
+
+    # SEC's universe doesn't include ETFs (they're registered funds, not
+    # operating-company filers), so a query like "SOXL" or "NUGT" comes back
+    # empty even though price/options data exists for them via Yahoo. If the
+    # query looks like a bare ticker and isn't already in the SEC results,
+    # try resolving it directly against Yahoo so ETFs are searchable too.
+    query_ticker = q.strip().upper()
+    if query_ticker.isalpha() and len(query_ticker) <= 5 and not any(r["ticker"] == query_ticker for r in results):
+        try:
+            yahoo_row = prices_ingest.resolve_via_yahoo(query_ticker)
+        except UpstreamError:
+            yahoo_row = None
+        if yahoo_row:
+            results = [
+                {
+                    "cik": yahoo_row["cik"],
+                    "cik_str": yahoo_row["cik_str"] or yahoo_row["ticker"],
+                    "ticker": yahoo_row["ticker"],
+                    "title": yahoo_row["title"],
+                },
+                *results,
+            ][:limit]
+
+    return {"results": results}
 
 
 @router.get("/companies/{ticker}")
