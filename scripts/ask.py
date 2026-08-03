@@ -351,6 +351,11 @@ def build_horizon_analysis(ticker: str, spot: float, expiration: int, target_day
     liquid_calls = enrich(pick_liquid_strikes(chain["calls"], spot, LIQUID_STRIKES_PER_SIDE), "call")
     liquid_puts = enrich(pick_liquid_strikes(chain["puts"], spot, LIQUID_STRIKES_PER_SIDE), "put")
 
+    # The FULL chain, every strike, both sides -- not just the near-the-money
+    # subset above. Same chain fetch already in hand, no extra network call.
+    all_calls = sorted(enrich(chain["calls"], "call"), key=lambda c: c["strike"])
+    all_puts = sorted(enrich(chain["puts"], "put"), key=lambda c: c["strike"])
+
     # ATM and ~1-SD-out strikes for the representative structures below --
     # searched across the full chain (see enrich_one) so the OTM leg is a
     # real ~1-SD strike, not whatever happened to land in the near-ATM list.
@@ -416,6 +421,8 @@ def build_horizon_analysis(ticker: str, spot: float, expiration: int, target_day
         "expected_move_1sd_pct": (move_1sd / spot) if move_1sd and spot else None,
         "liquid_calls": liquid_calls,
         "liquid_puts": liquid_puts,
+        "all_calls": all_calls,
+        "all_puts": all_puts,
         "structures": structures,
         "sensitivity": sensitivity_table(structures, spot),
     }
@@ -683,6 +690,15 @@ def build_strategy_prompt(ticker: str, name: str, question: str, horizons_days: 
         lines.extend(_fmt_structures(a["structures"]))
         lines.append(f"  Sensitivity to the underlying's price by this expiration (payoff per share, net of cost/credit):")
         lines.extend(_fmt_sensitivity(a["sensitivity"]))
+        lines.append(
+            f"  FULL OPTIONS CHAIN at this expiration -- every listed strike, not just the near-the-money ones "
+            f"above (use this for any question about a specific strike, the full distribution of OI/volume, or "
+            f"strikes further from the money than what's highlighted elsewhere):"
+        )
+        lines.append(f"  All calls ({len(a['all_calls'])} strikes):")
+        lines.extend(_fmt_strike_row(c) for c in a["all_calls"]) if a["all_calls"] else lines.append("    (none listed)")
+        lines.append(f"  All puts ({len(a['all_puts'])} strikes):")
+        lines.extend(_fmt_strike_row(c) for c in a["all_puts"]) if a["all_puts"] else lines.append("    (none listed)")
         lines.append("")
 
     if len(analyses) >= 2:
@@ -709,6 +725,13 @@ def build_strategy_prompt(ticker: str, name: str, question: str, horizons_days: 
         def fmt_ev(items: list[dict]) -> str:
             return "; ".join(f"{it['signal']}" for it in items) if items else "none"
 
+        if not horizons_assumed:
+            lines.append(
+                f"(The section below always covers the next 14 days regardless of what was asked -- it is "
+                f"supplementary color on the CURRENT lean, not the answer to the requested "
+                f"{', '.join(f'~{d}d' for d in horizons)}-day horizon(s). The EXPIRATION section(s) above, dated "
+                f"{', '.join(a['expiration_date'] for a in analyses)}, are what actually answer the question.)"
+            )
         lines.append(
             "NEAR-TERM (14-DAY) DIRECTIONAL EVIDENCE (context only -- computed over the next two weeks, not the "
             "horizon(s) above; use this to describe the CURRENT lean, not as a forecast for the requested horizon):"
@@ -761,9 +784,20 @@ def copy_to_clipboard(text: str) -> bool:
 
 
 def run_ollama(base_url: str, model: str, prompt: str, timeout: int = 600) -> str:
+    # Explicit num_ctx, not left to the model's Modelfile default -- observed
+    # live that finance-llama-8b's Modelfile pins num_ctx to 4096 despite the
+    # underlying model supporting 131072. A multi-expiration strategy prompt
+    # (especially with the full options chain included, see build_strategy_
+    # prompt) routinely runs well past 4096 tokens; Ollama silently drops the
+    # overflow from the FRONT of the prompt to make room, which was quietly
+    # eating the RULES block and the nearest-dated EXPIRATION section while
+    # leaving the always-present NEAR-TERM (14-DAY) evidence intact near the
+    # tail -- so a question about a date months out would come back reasoned
+    # almost entirely off the 2-week evidence instead. 32768 covers even a
+    # full-chain, 3-expiration prompt with headroom.
     body = json.dumps({
         "model": model, "prompt": prompt, "stream": False, "think": False,
-        "options": {"num_predict": 700},
+        "options": {"num_predict": 700, "num_ctx": 32768},
     }).encode()
     req = urllib.request.Request(f"{base_url}/api/generate", data=body, headers={"Content-Type": "application/json"})
     try:
