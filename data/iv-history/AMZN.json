@@ -84,9 +84,9 @@
     "ticker": "AMZN",
     "date": "2026-08-07",
     "expiration": 1788480000,
-    "underlying_price": 272.26,
-    "atm_strike": 270.0,
-    "call_iv": 0.3389348333740234,
-    "put_iv": 0.30799031860351556
+    "underlying_price": 274.48,
+    "atm_strike": 275.0,
+    "call_iv": 0.31427687683105465,
+    "put_iv": 0.28613995117187496
   }
 ]

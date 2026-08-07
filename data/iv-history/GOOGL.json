@@ -84,9 +84,9 @@
     "ticker": "GOOGL",
     "date": "2026-08-07",
     "expiration": 1788480000,
-    "underlying_price": 357.75,
-    "atm_strike": 360.0,
-    "call_iv": 0.3394841442871094,
-    "put_iv": 0.31842722595214834
+    "underlying_price": 354.3,
+    "atm_strike": 355.0,
+    "call_iv": 0.32221136779785153,
+    "put_iv": 0.28839822937011705
   }
 ]
