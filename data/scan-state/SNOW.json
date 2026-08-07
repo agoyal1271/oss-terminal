@@ -9,8 +9,9 @@
     0.5739348370927319,
     1.2847682119205297,
     3.5753424657534247,
-    4.733333333333333
+    4.733333333333333,
+    1.085085085085085
   ],
-  "term_structure_event": true,
-  "skew_direction": "flat"
+  "term_structure_event": false,
+  "skew_direction": "normal"
 }

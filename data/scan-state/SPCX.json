@@ -9,8 +9,9 @@
     0.2671619334211021,
     1.1109586691819584,
     0.7777131782945736,
-    0.6624106717484517
+    0.6624106717484517,
+    0.9407550602683648
   ],
-  "term_structure_event": true,
+  "term_structure_event": false,
   "skew_direction": "inverted"
 }
