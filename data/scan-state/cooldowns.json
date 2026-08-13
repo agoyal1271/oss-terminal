@@ -83,7 +83,7 @@
   "SNOW.pc_ratio_deviation": "2026-08-10",
   "SPCX.unusual_activity.SPCX260904C00111000": "2026-08-03",
   "SPCX.unusual_activity.SPCX260904C00110000": "2026-08-03",
-  "SPCX.pc_ratio_deviation": "2026-08-03",
+  "SPCX.pc_ratio_deviation": "2026-08-13",
   "SPCX.term_structure_backwardation": "2026-08-03",
   "GLD.unusual_activity.GLD260904C00420000": "2026-08-04",
   "GLD.unusual_activity.GLD260904C00393000": "2026-08-04",
@@ -135,5 +135,6 @@
   "SNOW.skew_inverted": "2026-08-12",
   "SPCX.unusual_activity.SPCX260911P00140000": "2026-08-12",
   "TSLA.unusual_activity.TSLA260911C00545000": "2026-08-12",
-  "TSLA.unusual_activity.TSLA260911C00540000": "2026-08-12"
+  "TSLA.unusual_activity.TSLA260911C00540000": "2026-08-12",
+  "GOOGL.unusual_activity.GOOGL260911C00340000": "2026-08-13"
 }
