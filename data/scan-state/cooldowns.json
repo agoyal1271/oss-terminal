@@ -23,7 +23,7 @@
   "GLD.unusual_activity.GLD260828C00404000": "2026-07-28",
   "GLD.term_structure_backwardation": "2026-08-05",
   "GOOGL.unusual_activity.GOOGL260828C00390000": "2026-07-28",
-  "GOOGL.iv_rank_low": "2026-08-10",
+  "GOOGL.iv_rank_low": "2026-08-17",
   "JPM.iv_rank_high": "2026-08-07",
   "MSFT.unusual_activity.MSFT260828P00375000": "2026-07-28",
   "MSFT.unusual_activity.MSFT260828C00415000": "2026-07-28",
@@ -93,7 +93,7 @@
   "BRK-B.rsi_overbought": "2026-08-05",
   "BRK-B.unusual_activity.BRKB260904C00515000": "2026-08-05",
   "GOOGL.unusual_activity.GOOGL260904P00330000": "2026-08-05",
-  "MSFT.pc_ratio_deviation": "2026-08-05",
+  "MSFT.pc_ratio_deviation": "2026-08-17",
   "NVDA.unusual_activity.NVDA260904P00190000": "2026-08-05",
   "NVDA.unusual_activity.NVDA260904P00220000": "2026-08-05",
   "NVDA.unusual_activity.NVDA260904P00110000": "2026-08-05",
@@ -123,7 +123,7 @@
   "AAPL.unusual_activity.AAPL260911C00330000": "2026-08-10",
   "NVDA.unusual_activity.NVDA260911P00205000": "2026-08-10",
   "NVDA.unusual_activity.NVDA260911P00150000": "2026-08-10",
-  "TSLA.pc_ratio_deviation": "2026-08-10",
+  "TSLA.pc_ratio_deviation": "2026-08-17",
   "AMZN.unusual_activity.AMZN260911P00240000": "2026-08-11",
   "AMZN.pc_ratio_deviation": "2026-08-11",
   "BRK-B.8k.0001193125-26-344495": "2026-08-11",
@@ -140,5 +140,9 @@
   "GLD.unusual_activity.GLD260911C00455000": "2026-08-14",
   "SPCX.8k.0001628280-26-056945": "2026-08-14",
   "TSLA.unusual_activity.TSLA260911P00340000": "2026-08-14",
-  "TSLA.unusual_activity.TSLA260911P00335000": "2026-08-14"
+  "TSLA.unusual_activity.TSLA260911P00335000": "2026-08-14",
+  "COIN.unusual_activity.COIN260918P00260000": "2026-08-17",
+  "GLD.unusual_activity.GLD260918P00455000": "2026-08-17",
+  "GLD.unusual_activity.GLD260918P00352000": "2026-08-17",
+  "GLD.unusual_activity.GLD260918P00510000": "2026-08-17"
 }
