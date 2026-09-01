@@ -228,9 +228,9 @@
     "ticker": "MSFT",
     "date": "2026-09-01",
     "expiration": 1790899200,
-    "underlying_price": 507.29,
-    "atm_strike": 505.0,
-    "call_iv": 0.279029426574707,
-    "put_iv": 0.24457542541503907
+    "underlying_price": 501.02,
+    "atm_strike": 500.0,
+    "call_iv": 0.2627942373657227,
+    "put_iv": 0.23102575622558597
   }
 ]

@@ -228,9 +228,9 @@
     "ticker": "TSLA",
     "date": "2026-09-01",
     "expiration": 1790899200,
-    "underlying_price": 367.95,
-    "atm_strike": 370.0,
-    "call_iv": 0.43408769042968753,
-    "put_iv": 0.4054014538574219
+    "underlying_price": 356.09,
+    "atm_strike": 355.0,
+    "call_iv": 0.420476986694336,
+    "put_iv": 0.3869079864501953
   }
 ]
