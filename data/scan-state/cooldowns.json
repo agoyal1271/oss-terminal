@@ -35,7 +35,7 @@
   "AMZN.iv_rank_high": "2026-07-29",
   "BMNR.skew_inverted": "2026-09-01",
   "BRK-B.golden_cross": "2026-07-29",
-  "BRK-B.iv_rank_high": "2026-08-07",
+  "BRK-B.iv_rank_high": "2026-09-02",
   "GOOGL.term_structure_backwardation": "2026-08-27",
   "GOOGL.insider_cluster.31": "2026-07-29",
   "JPM.term_structure_backwardation": "2026-08-28",
@@ -164,7 +164,7 @@
   "TSLA.unusual_activity.TSLA260925C00355000": "2026-08-24",
   "TSLA.unusual_activity.TSLA260925C00360000": "2026-08-24",
   "AMZN.insider_cluster.35": "2026-08-25",
-  "JPM.skew_inverted": "2026-08-27",
+  "JPM.skew_inverted": "2026-09-02",
   "NVDA.unusual_activity.NVDA260925P00135000": "2026-08-27",
   "AMZN.unusual_activity.AMZN260925C00295000": "2026-08-28",
   "BMNR.term_structure_backwardation": "2026-08-28",
@@ -200,5 +200,9 @@
   "MSFT.insider_cluster.36": "2026-09-01",
   "NOW.insider_cluster.36": "2026-09-01",
   "TSLA.unusual_activity.TSLA261002C00360000": "2026-09-01",
-  "TSLA.iv_rank_high": "2026-09-01"
+  "TSLA.iv_rank_high": "2026-09-01",
+  "COIN.8k.0001679788-26-000101": "2026-09-02",
+  "NVDA.unusual_activity.NVDA261002C00250000": "2026-09-02",
+  "SNOW.8k.0001640147-26-000033": "2026-09-02",
+  "TSLA.unusual_activity.TSLA261002C00355000": "2026-09-02"
 }
