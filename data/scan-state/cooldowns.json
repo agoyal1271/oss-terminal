@@ -24,7 +24,7 @@
   "GLD.term_structure_backwardation": "2026-09-08",
   "GOOGL.unusual_activity.GOOGL260828C00390000": "2026-07-28",
   "GOOGL.iv_rank_low": "2026-08-27",
-  "JPM.iv_rank_high": "2026-09-04",
+  "JPM.iv_rank_high": "2026-09-11",
   "MSFT.unusual_activity.MSFT260828P00375000": "2026-07-28",
   "MSFT.unusual_activity.MSFT260828C00415000": "2026-07-28",
   "MSFT.iv_rank_low": "2026-08-25",
@@ -79,7 +79,7 @@
   "NVDA.unusual_activity.NVDA260904P00170000": "2026-08-03",
   "NVDA.unusual_activity.NVDA260904C00170000": "2026-08-03",
   "NVDA.unusual_activity.NVDA260904C00180000": "2026-08-03",
-  "NVDA.pc_ratio_deviation": "2026-08-27",
+  "NVDA.pc_ratio_deviation": "2026-09-11",
   "SNOW.pc_ratio_deviation": "2026-09-03",
   "SPCX.unusual_activity.SPCX260904C00111000": "2026-08-03",
   "SPCX.unusual_activity.SPCX260904C00110000": "2026-08-03",
@@ -235,5 +235,7 @@
   "SPCX.unusual_activity.SPCX261009P00135000": "2026-09-09",
   "TSLA.unusual_activity.TSLA261009C00375000": "2026-09-09",
   "GLD.unusual_activity.GLD261009P00378000": "2026-09-10",
-  "GLD.unusual_activity.GLD261009P00360000": "2026-09-10"
+  "GLD.unusual_activity.GLD261009P00360000": "2026-09-10",
+  "SNOW.insider_cluster.37": "2026-09-11",
+  "SPCX.unusual_activity.SPCX261009P00110000": "2026-09-11"
 }
