@@ -24,7 +24,7 @@
   "GLD.term_structure_backwardation": "2026-09-15",
   "GOOGL.unusual_activity.GOOGL260828C00390000": "2026-07-28",
   "GOOGL.iv_rank_low": "2026-08-27",
-  "JPM.iv_rank_high": "2026-09-11",
+  "JPM.iv_rank_high": "2026-09-18",
   "MSFT.unusual_activity.MSFT260828P00375000": "2026-07-28",
   "MSFT.unusual_activity.MSFT260828C00415000": "2026-07-28",
   "MSFT.iv_rank_low": "2026-08-25",
@@ -44,7 +44,7 @@
   "TSLA.unusual_activity.TSLA260828C00305000": "2026-07-29",
   "AAPL.8k.0000320193-26-000018": "2026-07-30",
   "AMZN.8k.0001018724-26-000024": "2026-07-30",
-  "COIN.skew_inverted": "2026-09-01",
+  "COIN.skew_inverted": "2026-09-18",
   "COIN.8k.0001679788-26-000087": "2026-07-30",
   "GLD.unusual_activity.GLD260828P00340000": "2026-07-30",
   "GOOGL.unusual_activity.GOOGL260828P00300000": "2026-07-30",
@@ -248,5 +248,11 @@
   "SPCX.unusual_activity.SPCX261016P00155000": "2026-09-17",
   "SPCX.unusual_activity.SPCX261016C00110000": "2026-09-17",
   "SPCX.unusual_activity.SPCX261016C00105000": "2026-09-17",
-  "TSLA.unusual_activity.TSLA261016P00180000": "2026-09-17"
+  "TSLA.unusual_activity.TSLA261016P00180000": "2026-09-17",
+  "AMZN.unusual_activity.AMZN261016P00165000": "2026-09-18",
+  "COIN.unusual_activity.COIN261016P00050000": "2026-09-18",
+  "COIN.unusual_activity.COIN261016P00105000": "2026-09-18",
+  "COIN.unusual_activity.COIN261016P00055000": "2026-09-18",
+  "NVDA.insider_cluster.38": "2026-09-18",
+  "SPCX.unusual_activity.SPCX261016P00200000": "2026-09-18"
 }
