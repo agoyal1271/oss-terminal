@@ -61,7 +61,7 @@
   "AMZN.unusual_activity.AMZN260828C00310000": "2026-07-31",
   "AMZN.unusual_activity.AMZN260828C00280000": "2026-07-31",
   "AMZN.unusual_activity.AMZN260828C00300000": "2026-07-31",
-  "BRK-B.pc_ratio_deviation": "2026-09-16",
+  "BRK-B.pc_ratio_deviation": "2026-09-23",
   "GLD.unusual_activity.GLD260828C00371000": "2026-07-31",
   "JPM.pc_ratio_deviation": "2026-09-22",
   "JPM.iv_rank_low": "2026-08-29",
@@ -79,7 +79,7 @@
   "NVDA.unusual_activity.NVDA260904P00170000": "2026-08-03",
   "NVDA.unusual_activity.NVDA260904C00170000": "2026-08-03",
   "NVDA.unusual_activity.NVDA260904C00180000": "2026-08-03",
-  "NVDA.pc_ratio_deviation": "2026-09-11",
+  "NVDA.pc_ratio_deviation": "2026-09-23",
   "SNOW.pc_ratio_deviation": "2026-09-17",
   "SPCX.unusual_activity.SPCX260904C00111000": "2026-08-03",
   "SPCX.unusual_activity.SPCX260904C00110000": "2026-08-03",
@@ -271,5 +271,10 @@
   "BMNR.unusual_activity.BMNR261023C00029000": "2026-09-22",
   "NVDA.unusual_activity.NVDA261023C00235000": "2026-09-22",
   "NVDA.unusual_activity.NVDA261023C00230000": "2026-09-22",
-  "NVDA.unusual_activity.NVDA261023C00260000": "2026-09-22"
+  "NVDA.unusual_activity.NVDA261023C00260000": "2026-09-22",
+  "GLD.unusual_activity.GLD261023P00340000": "2026-09-23",
+  "GOOGL.unusual_activity.GOOGL261023C00340000": "2026-09-23",
+  "GOOGL.unusual_activity.GOOGL261023C00335000": "2026-09-23",
+  "NVDA.unusual_activity.NVDA261023C00250000": "2026-09-23",
+  "NVDA.unusual_activity.NVDA261023C00220000": "2026-09-23"
 }
