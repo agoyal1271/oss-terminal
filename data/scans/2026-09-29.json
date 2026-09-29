@@ -2,61 +2,74 @@
   "date": "2026-09-29",
   "findings": [
     {
-      "key": "AAPL.iv_jump",
+      "key": "AAPL.iv_rank_high",
       "ticker": "AAPL",
       "category": "options",
-      "severity": "warn",
-      "title": "AAPL: ATM IV jumped",
-      "detail": "ATM IV moved from 21% to 26% day-over-day.",
-      "value": 0.26476260147094727,
+      "severity": "info",
+      "title": "AAPL: IV rank extreme (high)",
+      "detail": "IV rank is 86 (45 days of history) -- premium is rich relative to its own recent range.",
+      "value": 85.63007727362792,
       "ctx": {}
     },
     {
-      "key": "AMZN.pc_ratio_deviation",
+      "key": "AAPL.insider_cluster.40",
+      "ticker": "AAPL",
+      "category": "filing",
+      "severity": "info",
+      "title": "AAPL: insider filing cluster",
+      "detail": "7 Form 4 filings in the last 5 days.",
+      "value": 7,
+      "ctx": {}
+    },
+    {
+      "key": "AMZN.iv_rank_high",
       "ticker": "AMZN",
       "category": "options",
       "severity": "info",
-      "title": "AMZN: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.93 vs its own 10-day average of 0.38.",
-      "value": 0.9273142112125163,
+      "title": "AMZN: IV rank extreme (high)",
+      "detail": "IV rank is 81 (45 days of history) -- premium is rich relative to its own recent range.",
+      "value": 81.45911949685534,
       "ctx": {}
     },
     {
-      "key": "AMZN.iv_jump",
-      "ticker": "AMZN",
-      "category": "options",
+      "key": "BMNR.golden_cross",
+      "ticker": "BMNR",
+      "category": "technical",
       "severity": "warn",
-      "title": "AMZN: ATM IV jumped",
-      "detail": "ATM IV moved from 28% to 40% day-over-day.",
-      "value": 0.39722282470703124,
-      "ctx": {}
+      "title": "BMNR: golden cross",
+      "detail": "50-day SMA just crossed above the 200-day SMA -- bullish trend structure forming.",
+      "value": 21.966399936676027,
+      "ctx": {
+        "sma50": 21.966399936676027,
+        "sma200": 21.79339994907379
+      }
     },
     {
-      "key": "BRK-B.pc_ratio_deviation",
+      "key": "BRK-B.iv_rank_high",
       "ticker": "BRK-B",
       "category": "options",
       "severity": "info",
-      "title": "BRK-B: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.46 vs its own 10-day average of 1.12.",
-      "value": 0.459866220735786,
+      "title": "BRK-B: IV rank extreme (high)",
+      "detail": "IV rank is 86 (45 days of history) -- premium is rich relative to its own recent range.",
+      "value": 85.84617921028769,
       "ctx": {}
     },
     {
-      "key": "COIN.skew_inverted",
-      "ticker": "COIN",
-      "category": "options",
-      "severity": "warn",
-      "title": "COIN: IV skew flipped inverted",
-      "detail": "Call-side IV runs 4 points above put-side IV at the wings -- inverted skew (speculative upside chasing).",
-      "value": null,
-      "ctx": {}
-    },
-    {
-      "key": "GLD.term_structure_backwardation",
+      "key": "GLD.pc_ratio_deviation",
       "ticker": "GLD",
       "category": "options",
+      "severity": "info",
+      "title": "GLD: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.40 vs its own 10-day average of 0.93.",
+      "value": 0.4023784167554136,
+      "ctx": {}
+    },
+    {
+      "key": "GOOGL.term_structure_backwardation",
+      "ticker": "GOOGL",
+      "category": "options",
       "severity": "warn",
-      "title": "GLD: IV term structure flipped into backwardation",
+      "title": "GOOGL: IV term structure flipped into backwardation",
       "detail": "IV spikes at expiration 1790899200 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
       "value": null,
       "ctx": {
@@ -64,33 +77,13 @@
       }
     },
     {
-      "key": "GOOGL.iv_jump",
-      "ticker": "GOOGL",
-      "category": "options",
-      "severity": "warn",
-      "title": "GOOGL: ATM IV jumped",
-      "detail": "ATM IV moved from 30% to 38% day-over-day.",
-      "value": 0.37621168228149415,
-      "ctx": {}
-    },
-    {
       "key": "GOOGL.iv_rank_high",
       "ticker": "GOOGL",
       "category": "options",
       "severity": "info",
       "title": "GOOGL: IV rank extreme (high)",
-      "detail": "IV rank is 86 (44 days of history) -- premium is rich relative to its own recent range.",
-      "value": 86.07401588548485,
-      "ctx": {}
-    },
-    {
-      "key": "JPM.pc_ratio_deviation",
-      "ticker": "JPM",
-      "category": "options",
-      "severity": "info",
-      "title": "JPM: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 1.81 vs its own 10-day average of 0.73.",
-      "value": 1.805084745762712,
+      "detail": "IV rank is 100 (45 days of history) -- premium is rich relative to its own recent range.",
+      "value": 100.0,
       "ctx": {}
     },
     {
@@ -99,31 +92,19 @@
       "category": "options",
       "severity": "info",
       "title": "JPM: IV rank extreme (high)",
-      "detail": "IV rank is 97 (44 days of history) -- premium is rich relative to its own recent range.",
-      "value": 96.71293307510223,
+      "detail": "IV rank is 100 (45 days of history) -- premium is rich relative to its own recent range.",
+      "value": 100.0,
       "ctx": {}
     },
     {
-      "key": "MSFT.iv_jump",
-      "ticker": "MSFT",
+      "key": "NOW.pc_ratio_deviation",
+      "ticker": "NOW",
       "category": "options",
-      "severity": "warn",
-      "title": "MSFT: ATM IV jumped",
-      "detail": "ATM IV moved from 27% to 35% day-over-day.",
-      "value": 0.346060616607666,
+      "severity": "info",
+      "title": "NOW: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 2.07 vs its own 10-day average of 1.16.",
+      "value": 2.066123188405797,
       "ctx": {}
-    },
-    {
-      "key": "NVDA.term_structure_backwardation",
-      "ticker": "NVDA",
-      "category": "options",
-      "severity": "warn",
-      "title": "NVDA: IV term structure flipped into backwardation",
-      "detail": "IV spikes at expiration 1790899200 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
-      "value": null,
-      "ctx": {
-        "spike_expiration": 1790899200
-      }
     },
     {
       "key": "SNOW.pc_ratio_deviation",
@@ -131,46 +112,21 @@
       "category": "options",
       "severity": "info",
       "title": "SNOW: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.24 vs its own 10-day average of 1.03.",
-      "value": 0.24303405572755418,
+      "detail": "Put/call volume ratio is 0.17 vs its own 10-day average of 0.97.",
+      "value": 0.17397078353253653,
       "ctx": {}
     },
     {
-      "key": "TSLA.unusual_activity.TSLA261030C00365000",
-      "ticker": "TSLA",
+      "key": "SPCX.unusual_activity.SPCX261030P00100000",
+      "ticker": "SPCX",
       "category": "options",
       "severity": "warn",
-      "title": "TSLA: unusual options activity",
-      "detail": "TSLA261030C00365000 (~30d tenor): volume 3,479 vs open interest 186 -- new positioning, not just today's expiring weekly noise.",
-      "value": 3479,
+      "title": "SPCX: unusual options activity",
+      "detail": "SPCX261030P00100000 (~30d tenor): volume 2,212 vs open interest 610 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2212,
       "ctx": {
-        "strike": 365.0,
+        "strike": 100.0,
         "expiration": 1793318400
-      }
-    },
-    {
-      "key": "TSLA.unusual_activity.TSLA261030P00340000",
-      "ticker": "TSLA",
-      "category": "options",
-      "severity": "warn",
-      "title": "TSLA: unusual options activity",
-      "detail": "TSLA261030P00340000 (~30d tenor): volume 1,724 vs open interest 476 -- new positioning, not just today's expiring weekly noise.",
-      "value": 1724,
-      "ctx": {
-        "strike": 340.0,
-        "expiration": 1793318400
-      }
-    },
-    {
-      "key": "TSLA.term_structure_backwardation",
-      "ticker": "TSLA",
-      "category": "options",
-      "severity": "warn",
-      "title": "TSLA: IV term structure flipped into backwardation",
-      "detail": "IV spikes at expiration 1790899200 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
-      "value": null,
-      "ctx": {
-        "spike_expiration": 1790899200
       }
     },
     {
@@ -179,25 +135,20 @@
       "category": "options",
       "severity": "info",
       "title": "TSLA: IV rank extreme (high)",
-      "detail": "IV rank is 89 (44 days of history) -- premium is rich relative to its own recent range.",
-      "value": 89.24475086179879,
+      "detail": "IV rank is 93 (45 days of history) -- premium is rich relative to its own recent range.",
+      "value": 93.11814478219992,
       "ctx": {}
     }
   ],
   "posted": [
-    "AAPL.iv_jump",
-    "AMZN.iv_jump",
-    "COIN.skew_inverted",
-    "GLD.term_structure_backwardation",
-    "GOOGL.iv_jump",
-    "MSFT.iv_jump",
-    "NVDA.term_structure_backwardation",
-    "TSLA.unusual_activity.TSLA261030C00365000",
-    "TSLA.unusual_activity.TSLA261030P00340000",
-    "TSLA.term_structure_backwardation",
-    "GOOGL.iv_rank_high",
-    "JPM.pc_ratio_deviation",
-    "TSLA.iv_rank_high"
+    "BMNR.golden_cross",
+    "GOOGL.term_structure_backwardation",
+    "SPCX.unusual_activity.SPCX261030P00100000",
+    "AAPL.iv_rank_high",
+    "AAPL.insider_cluster.40",
+    "AMZN.iv_rank_high",
+    "BRK-B.iv_rank_high",
+    "NOW.pc_ratio_deviation"
   ],
   "scan_errors": [
     "NUGT: request failed -- HTTP Error 404: Not Found",
