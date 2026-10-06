@@ -100,9 +100,9 @@ screening yet (that's Phase 2, see below).
   approach picked up boilerplate instead of the actual announcement.
 - `app/ingest/ownership.py` — institutional ownership via SEC full-text
   search (see "Institutional ownership" below).
-- `app/ingest/options.py` — options chain via Yahoo, including the
-  session-cookie/crumb handshake that endpoint requires (see "Options data"
-  below).
+- `app/ingest/options.py` — normalized options chain through Tradier's
+  production API when configured, with the original Yahoo adapter retained
+  as an explicitly labeled local-development fallback.
 - `app/ingest/tickers.py` — SEC's own ticker↔CIK mapping (search index).
 
 ## Data sources — what's used and why
@@ -113,7 +113,7 @@ screening yet (that's Phase 2, see below).
 | Filings list, SIC/exchange | [SEC submissions API](https://www.sec.gov/os/webmaster-faq#developers) | Official, free, no key. |
 | Ticker↔CIK search index | [SEC company_tickers.json](https://www.sec.gov/files/company_tickers.json) | Official, free, no key. ~10,400 entities. |
 | Prices | Yahoo Finance unofficial chart endpoint | **No key, but unofficial** — same endpoint the `yfinance` library uses. No published rate limit or SLA; Yahoo could change or block it. Delayed, not a licensed real-time feed. See "Known limitations." |
-| Options chains | Yahoo Finance unofficial options endpoint | Same caveats as prices, plus its own session/crumb requirement — see "Options data" below. |
+| Options chains | Tradier production API; Yahoo fallback | Tradier provides real-time brokerage-account data and vendor Greeks. Every response exposes source, feed status, capture time, and quote timestamps. Yahoo remains an explicitly labeled development fallback. |
 
 **Dropped during build:** Stooq was in the original plan for prices but now
 requires solving a JavaScript proof-of-work challenge to access
@@ -122,14 +122,19 @@ replaced with Yahoo's endpoint.
 
 ## Options data
 
-`app/ingest/options.py` pulls the full calls/puts chain per expiration from
-Yahoo's unofficial options endpoint. Unlike the price-chart endpoint, this
-one enforces a session cookie plus a CSRF "crumb" token — a two-step
-handshake (seed a cookie at `fc.yahoo.com`, then fetch a crumb) done once per
-backend process and reused, with an automatic refetch-and-retry if a request
-comes back 401 (the crumb/cookie pair expires). Found and worked around
-during development after the plain chart-endpoint approach returned
-`"Invalid Crumb"` on every options request.
+`app/ingest/options.py` exposes one stable response shape over two providers.
+With `OPTIONS_PROVIDER=tradier` and `TRADIER_TOKEN` set, it pulls expirations,
+the chain, the underlying quote, IV, and Greeks from Tradier's production
+API. Quotes are cached for only 30 seconds and the upstream capture time is
+stored inside the cached payload, preventing an old quote from acquiring a
+new timestamp merely because it was read again.
+
+With the default `OPTIONS_PROVIDER=auto`, Tradier is selected whenever a token
+exists; otherwise the app retains the original Yahoo session-cookie/crumb
+adapter for local development. The UI labels that path `delayed/unknown` and
+leaves vendor Greeks blank. Production should set the provider explicitly to
+`tradier`, which fails closed if the token is missing instead of silently
+falling back.
 
 Two computed fields are worth knowing the exact definition of, since neither
 is a raw Yahoo field:
@@ -399,13 +404,16 @@ model during development:
 
 ## Running it
 
-Two servers, no database, no signup required for the data sources used.
+Two servers and no database. SEC/Yahoo need no signup; real-time options use a
+Tradier production token. Copy `backend/.env.example` to `backend/.env` and
+set the provider/token before starting the backend.
 
 ```bash
 # backend
 cd backend
 python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
 uvicorn app.main:app --port 8000
 
 # frontend (separate terminal)
@@ -720,9 +728,10 @@ This is Phase 1 of the plan discussed. Later phases:
   matched by CUSIP — part of the Phase 2 datastore work.
 - **Form 4 transaction parsing.** Individual insider buy/sell transactions
   (shares, price, date, insider role), not just a link to the filing.
-- **Options Greeks.** Delta/gamma/theta/vega aren't in Yahoo's feed; computing
-  them (standard Black-Scholes from strike, spot, IV, time-to-expiry, and a
-  risk-free rate) is straightforward to add on top of the existing chain data.
+- ~~**Options Greeks.**~~ **Built for the Tradier path:** vendor
+  delta/gamma/theta/vega/rho are normalized into each contract. The Yahoo
+  fallback leaves them blank; the standalone strategy scripts may still
+  calculate Black-Scholes estimates and label them as estimates.
 - ~~IV rank/percentile~~ — **built**, but starting from zero days of history
   as of this writing. See "IV rank / percentile" above for the daily
   GitHub Action that accumulates it going forward (no free historical IV
@@ -734,9 +743,11 @@ This is Phase 1 of the plan discussed. Later phases:
 - This is a research tool: it surfaces sourced data, not recommendations. It
   deliberately never outputs a buy/sell signal or position sizing — doing so
   would risk crossing into investment-adviser territory.
-- The Yahoo Finance price endpoint is unofficial; treat this as a
-  personal/research tool, not a redistribution service. Swap in a licensed
-  feed (Tiingo, Polygon, IEX) before using this commercially.
+- The Yahoo Finance price endpoint and options fallback are unofficial; treat
+  them as personal/research data. Tradier production data is intended for the
+  authenticated account's use. A public or multi-user product requires a
+  commercial/partner data agreement and applicable OPRA entitlements rather
+  than reusing one personal token for redistribution.
 - SEC's fair-access policy requires a descriptive `User-Agent` with contact
   info on every request (see `backend/app/config.py`) and asks callers not to
   exceed ~10 requests/second — this project caches aggressively specifically

@@ -13,6 +13,11 @@ function formatExpiration(unixSeconds: number): string {
   return new Date(unixSeconds * 1000).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
 
+function formatCapturedAt(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "unknown" : date.toLocaleTimeString("en-US", { timeZoneName: "short" });
+}
+
 export function OptionsPage() {
   const { ticker = "" } = useParams();
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
@@ -116,7 +121,9 @@ export function OptionsPage() {
               </div>
             )}
             <p className="source-note">
-              Source: Yahoo Finance (unofficial, delayed). Expected move is the at-the-money call + put price, a
+              Source: {chain.source === "tradier" ? "Tradier production market-data feed" : "Yahoo Finance (unofficial fallback)"}
+              {" · "}{chain.feed_status === "realtime_production" ? "real-time" : "delayed/unknown"}
+              {" · captured "}{formatCapturedAt(chain.captured_at_utc)}. Expected move is the at-the-money call + put price, a
               standard trader's rule-of-thumb for the market-implied move by expiration — not a prediction.
             </p>
           </div>
@@ -148,7 +155,7 @@ export function OptionsPage() {
       )}
 
       <p className="disclaimer">
-        Options data sourced live from Yahoo Finance. This is a research tool, not investment advice — options
+        Options data source and freshness are shown above. This is a research tool, not investment advice — options
         involve substantial risk of loss and are not suitable for all investors.
       </p>
     </div>

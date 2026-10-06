@@ -25,8 +25,18 @@ class Settings(BaseSettings):
     ttl_company_facts: int = 12 * 3600
     ttl_submissions: int = 6 * 3600
     ttl_prices: int = 15 * 60
+    # Options quotes are used for intraday decisions. Keep this short so a
+    # requested 1 p.m. snapshot cannot silently be ten minutes old.
+    ttl_options: int = 30
 
     fred_api_key: str | None = None
+
+    # `auto` uses Tradier when a token exists and otherwise retains the
+    # Yahoo development fallback. Set `tradier` in production to fail closed
+    # instead of ever serving an unlicensed/delayed fallback.
+    options_provider: str = "auto"
+    tradier_token: str | None = None
+    tradier_base_url: str = "https://api.tradier.com/v1"
 
     # Shared secret the daily GitHub Action snapshot job must present to
     # /internal/iv-snapshot. If unset (local dev), the endpoint is open --

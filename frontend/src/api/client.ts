@@ -110,6 +110,14 @@ export interface OptionContract {
   open_interest: number;
   implied_volatility: number | null;
   in_the_money: boolean;
+  delta?: number | null;
+  gamma?: number | null;
+  theta?: number | null;
+  vega?: number | null;
+  rho?: number | null;
+  quote_at?: string | null;
+  last_trade_at?: string | null;
+  greeks_updated_at?: string | null;
 }
 
 export interface OptionsSummary {
@@ -126,6 +134,10 @@ export interface OptionsSummary {
 }
 
 export interface OptionsChain {
+  source: "tradier" | "yahoo_finance" | string;
+  feed_status: "realtime_production" | "delayed_or_unknown" | string;
+  captured_at_utc: string;
+  underlying_quote_at?: string | null;
   symbol: string;
   underlying_price: number | null;
   expiration_dates: number[];

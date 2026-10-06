@@ -30,6 +30,8 @@ export function OptionsChainTable({ title, contracts, atmStrike }: { title: stri
               <th title="Volume exceeding open interest means most of today's activity is new positions being opened, not existing ones changing hands">Volume</th>
               <th>Open Int.</th>
               <th>IV</th>
+              <th title="Vendor-computed option delta; blank on the Yahoo fallback">Delta</th>
+              <th title="Vendor-computed daily theta; blank on the Yahoo fallback">Theta</th>
             </tr>
           </thead>
           <tbody>
@@ -59,6 +61,8 @@ export function OptionsChainTable({ title, contracts, atmStrike }: { title: stri
                   </td>
                   <td>{fmtNumber(c.open_interest)}</td>
                   <td>{c.implied_volatility != null ? fmtPercent(c.implied_volatility) : "—"}</td>
+                  <td>{c.delta != null ? c.delta.toFixed(3) : "—"}</td>
+                  <td>{c.theta != null ? c.theta.toFixed(3) : "—"}</td>
                 </tr>
               );
             })}

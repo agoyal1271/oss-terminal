@@ -1,17 +1,17 @@
-"""Options chain via Yahoo Finance's unofficial endpoint.
+"""Options chain with a Tradier production feed and Yahoo fallback.
 
-Unlike the price-chart endpoint used elsewhere in this app, options requires
-a session cookie plus a CSRF "crumb" token -- Yahoo tightened access to this
-endpoint independently of the chart one. The session is fetched once per
-backend process (module-level, so a warm serverless instance reuses it) and
-refetched automatically if a request comes back 401 (the crumb/cookie pair
-expired).
+Set OPTIONS_PROVIDER=tradier and TRADIER_TOKEN in production. `auto` selects
+Tradier when the token exists and preserves the old Yahoo adapter for local
+development. Both adapters return the same public response shape; provenance
+and timestamps make it impossible for the UI/model to mistake the fallback
+for an entitled real-time feed.
 """
 
 from __future__ import annotations
 
 import concurrent.futures
 import datetime
+from typing import Any
 
 import httpx
 
@@ -31,6 +31,33 @@ COOKIE_SEED_URL = "https://fc.yahoo.com"
 YAHOO_UA = "Mozilla/5.0 (compatible; OSS-Terminal/0.1)"
 
 _session: dict[str, str] | None = None
+
+
+def _captured_payload(fetch_fn) -> dict:
+    """Put capture time inside cached data, not outside it.
+
+    Otherwise a cached quote would receive a new timestamp on every read and
+    appear fresh even though its bid/ask came from an older upstream call.
+    """
+    return {
+        "captured_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "payload": fetch_fn(),
+    }
+
+
+def _epoch_to_iso(value: Any) -> str | None:
+    if value in (None, ""):
+        return None
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    if numeric > 10_000_000_000:  # Tradier dates are commonly epoch milliseconds.
+        numeric /= 1000
+    try:
+        return datetime.datetime.fromtimestamp(numeric, datetime.timezone.utc).isoformat()
+    except (OverflowError, OSError, ValueError):
+        return None
 
 
 def _fetch_session() -> dict[str, str]:
@@ -85,17 +112,25 @@ def _normalize_contract(c: dict) -> dict:
         "open_interest": c.get("openInterest") or 0,
         "implied_volatility": c.get("impliedVolatility"),
         "in_the_money": c.get("inTheMoney", False),
+        "delta": None,
+        "gamma": None,
+        "theta": None,
+        "vega": None,
+        "rho": None,
+        "quote_at": None,
+        "last_trade_at": _epoch_to_iso(c.get("lastTradeDate")),
     }
 
 
-def get_options_chain(ticker: str, expiration: int | None = None) -> dict:
+def _get_yahoo_options_chain(ticker: str, expiration: int | None = None) -> dict:
     cache_key = f"{ticker}:{expiration or 'nearest'}"
-    data = cached_call_json(
-        namespace="yahoo_options",
+    wrapper = cached_call_json(
+        namespace="yahoo_options_v2",
         key=cache_key,
         ttl=10 * 60,
-        fetch_fn=lambda: _fetch_chain_json(ticker, expiration),
+        fetch_fn=lambda: _captured_payload(lambda: _fetch_chain_json(ticker, expiration)),
     )
+    data = wrapper["payload"]
 
     result_list = (data.get("optionChain") or {}).get("result") or []
     if not result_list:
@@ -120,6 +155,10 @@ def get_options_chain(ticker: str, expiration: int | None = None) -> dict:
         expected_move = atm_call["last_price"] + atm_put["last_price"]
 
     return {
+        "source": "yahoo_finance",
+        "feed_status": "delayed_or_unknown",
+        "captured_at_utc": wrapper["captured_at_utc"],
+        "underlying_quote_at": _epoch_to_iso((r.get("quote") or {}).get("regularMarketTime")),
         "symbol": r.get("underlyingSymbol", ticker.upper()),
         "underlying_price": underlying_price,
         "expiration_dates": r.get("expirationDates", []),
@@ -139,6 +178,204 @@ def get_options_chain(ticker: str, expiration: int | None = None) -> dict:
             "expected_move_atm_straddle": expected_move,
         },
     }
+
+
+def _tradier_headers() -> dict[str, str]:
+    if not settings.tradier_token:
+        raise UpstreamError("TRADIER_TOKEN is required when OPTIONS_PROVIDER=tradier")
+    return {
+        "Authorization": f"Bearer {settings.tradier_token}",
+        "Accept": "application/json",
+        "User-Agent": "OSS-Terminal/0.2",
+    }
+
+
+def _fetch_tradier(path: str, params: dict[str, Any]) -> dict:
+    response = httpx.get(
+        f"{settings.tradier_base_url.rstrip('/')}/{path.lstrip('/')}",
+        headers=_tradier_headers(),
+        params=params,
+        timeout=15,
+    )
+    response.raise_for_status()
+    data = response.json()
+    if isinstance(data, dict) and data.get("fault"):
+        raise UpstreamError(f"Tradier returned an API fault: {data['fault']}")
+    return data
+
+
+def _as_list(value: Any) -> list:
+    if value is None:
+        return []
+    return value if isinstance(value, list) else [value]
+
+
+def _date_to_expiration(date_value: str) -> int:
+    parsed = datetime.date.fromisoformat(date_value)
+    return int(datetime.datetime.combine(parsed, datetime.time.min, datetime.timezone.utc).timestamp())
+
+
+def _expiration_to_date(expiration: int) -> str:
+    return datetime.datetime.fromtimestamp(expiration, datetime.timezone.utc).date().isoformat()
+
+
+def _tradier_expirations(ticker: str) -> tuple[list[int], str]:
+    wrapper = cached_call_json(
+        namespace="tradier_option_expirations_v1",
+        key=ticker.upper(),
+        ttl=15 * 60,
+        fetch_fn=lambda: _captured_payload(
+            lambda: _fetch_tradier("markets/options/expirations", {"symbol": ticker.upper(), "includeAllRoots": "true"})
+        ),
+    )
+    dates = _as_list(((wrapper.get("payload") or {}).get("expirations") or {}).get("date"))
+    expirations = sorted(_date_to_expiration(value) for value in dates if value)
+    return expirations, wrapper["captured_at_utc"]
+
+
+def _tradier_quote(ticker: str) -> tuple[dict, str]:
+    wrapper = cached_call_json(
+        namespace="tradier_underlying_quote_v1",
+        key=ticker.upper(),
+        ttl=settings.ttl_options,
+        fetch_fn=lambda: _captured_payload(
+            lambda: _fetch_tradier("markets/quotes", {"symbols": ticker.upper(), "greeks": "false"})
+        ),
+    )
+    quote = ((wrapper.get("payload") or {}).get("quotes") or {}).get("quote") or {}
+    if isinstance(quote, list):
+        quote = quote[0] if quote else {}
+    return quote, wrapper["captured_at_utc"]
+
+
+def _tradier_iv(greeks: dict) -> float | None:
+    for key in ("mid_iv", "smv_vol", "ask_iv", "bid_iv"):
+        value = greeks.get(key)
+        if value not in (None, ""):
+            return float(value)
+    return None
+
+
+def _normalize_tradier_contract(contract: dict, underlying_price: float | None) -> dict:
+    greeks = contract.get("greeks") or {}
+    side = str(contract.get("option_type") or contract.get("type") or "").lower()
+    strike = float(contract.get("strike") or 0)
+    in_the_money = bool(
+        underlying_price is not None
+        and ((side == "call" and underlying_price > strike) or (side == "put" and underlying_price < strike))
+    )
+    bid_at = contract.get("bid_date")
+    ask_at = contract.get("ask_date")
+    quote_at = max((v for v in (bid_at, ask_at) if v not in (None, "")), default=None)
+    return {
+        "contract_symbol": contract.get("symbol"),
+        "strike": strike,
+        "last_price": contract.get("last"),
+        "bid": contract.get("bid"),
+        "ask": contract.get("ask"),
+        "change": contract.get("change"),
+        "percent_change": contract.get("change_percentage"),
+        "volume": contract.get("volume") or 0,
+        "open_interest": contract.get("open_interest") or 0,
+        "implied_volatility": _tradier_iv(greeks),
+        "in_the_money": in_the_money,
+        "delta": greeks.get("delta"),
+        "gamma": greeks.get("gamma"),
+        "theta": greeks.get("theta"),
+        "vega": greeks.get("vega"),
+        "rho": greeks.get("rho"),
+        "quote_at": _epoch_to_iso(quote_at),
+        "last_trade_at": _epoch_to_iso(contract.get("trade_date")),
+        "greeks_updated_at": greeks.get("updated_at"),
+    }
+
+
+def _get_tradier_options_chain(ticker: str, expiration: int | None = None) -> dict:
+    expirations, expirations_captured_at = _tradier_expirations(ticker)
+    if not expirations:
+        raise ValueError(f"no options expirations for {ticker}")
+    selected = expiration or expirations[0]
+    if selected not in expirations:
+        raise ValueError(f"expiration {_expiration_to_date(selected)} is not available for {ticker}")
+
+    expiration_date = _expiration_to_date(selected)
+    wrapper = cached_call_json(
+        namespace="tradier_options_v1",
+        key=f"{ticker.upper()}:{selected}",
+        ttl=settings.ttl_options,
+        fetch_fn=lambda: _captured_payload(
+            lambda: _fetch_tradier(
+                "markets/options/chains",
+                {"symbol": ticker.upper(), "expiration": expiration_date, "greeks": "true"},
+            )
+        ),
+    )
+    quote, quote_captured_at = _tradier_quote(ticker)
+    underlying_price = quote.get("last")
+    if underlying_price is None and quote.get("bid") is not None and quote.get("ask") is not None:
+        underlying_price = (float(quote["bid"]) + float(quote["ask"])) / 2
+    underlying_price = float(underlying_price) if underlying_price is not None else None
+
+    raw_contracts = _as_list(((wrapper.get("payload") or {}).get("options") or {}).get("option"))
+    normalized = [_normalize_tradier_contract(item, underlying_price) for item in raw_contracts]
+    calls = sorted((item for item, raw in zip(normalized, raw_contracts) if str(raw.get("option_type") or raw.get("type")).lower() == "call"), key=lambda x: x["strike"])
+    puts = sorted((item for item, raw in zip(normalized, raw_contracts) if str(raw.get("option_type") or raw.get("type")).lower() == "put"), key=lambda x: x["strike"])
+    if not calls and not puts:
+        raise ValueError(f"no options contracts for {ticker} on {expiration_date}")
+
+    call_volume = sum(int(c["volume"]) for c in calls)
+    put_volume = sum(int(p["volume"]) for p in puts)
+    call_oi = sum(int(c["open_interest"]) for c in calls)
+    put_oi = sum(int(p["open_interest"]) for p in puts)
+    atm_call = min(calls, key=lambda c: abs(c["strike"] - underlying_price)) if calls and underlying_price else None
+    atm_put = min(puts, key=lambda p: abs(p["strike"] - underlying_price)) if puts and underlying_price else None
+    expected_move = None
+    if atm_call and atm_put and atm_call["last_price"] is not None and atm_put["last_price"] is not None:
+        expected_move = float(atm_call["last_price"]) + float(atm_put["last_price"])
+
+    quote_at = max((v for v in (quote.get("bid_date"), quote.get("ask_date"), quote.get("trade_date")) if v not in (None, "")), default=None)
+    return {
+        "source": "tradier",
+        "feed_status": "realtime_production",
+        "captured_at_utc": wrapper["captured_at_utc"],
+        "expirations_captured_at_utc": expirations_captured_at,
+        "underlying_captured_at_utc": quote_captured_at,
+        "underlying_quote_at": _epoch_to_iso(quote_at),
+        "symbol": ticker.upper(),
+        "underlying_price": underlying_price,
+        "expiration_dates": expirations,
+        "selected_expiration": selected,
+        "calls": calls,
+        "puts": puts,
+        "summary": {
+            "call_volume": call_volume,
+            "put_volume": put_volume,
+            "call_open_interest": call_oi,
+            "put_open_interest": put_oi,
+            "put_call_volume_ratio": (put_volume / call_volume) if call_volume else None,
+            "put_call_oi_ratio": (put_oi / call_oi) if call_oi else None,
+            "atm_strike": atm_call["strike"] if atm_call else None,
+            "atm_call_iv": atm_call["implied_volatility"] if atm_call else None,
+            "atm_put_iv": atm_put["implied_volatility"] if atm_put else None,
+            "expected_move_atm_straddle": expected_move,
+        },
+    }
+
+
+def _selected_provider() -> str:
+    provider = settings.options_provider.strip().lower()
+    if provider == "auto":
+        return "tradier" if settings.tradier_token else "yahoo"
+    if provider not in {"tradier", "yahoo"}:
+        raise ValueError("OPTIONS_PROVIDER must be auto, tradier, or yahoo")
+    return provider
+
+
+def get_options_chain(ticker: str, expiration: int | None = None) -> dict:
+    """Return one normalized chain from the configured provider."""
+    if _selected_provider() == "tradier":
+        return _get_tradier_options_chain(ticker, expiration)
+    return _get_yahoo_options_chain(ticker, expiration)
 
 
 def get_iv_term_structure(ticker: str, max_expirations: int = 8) -> dict:
