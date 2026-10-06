@@ -822,6 +822,55 @@ def run_ollama(base_url: str, model: str, prompt: str, timeout: int = 600) -> st
     return data.get("response", "").strip()
 
 
+def run_openai(prompt: str, model: str, api_key: str | None = None, timeout: int = 600) -> str:
+    """Send a grounded prompt to the OpenAI Responses API.
+
+    Stdlib-only, like the rest of this script. ``store`` is disabled because
+    these prompts may eventually include position details explicitly supplied
+    by the user. The API key is read from the environment, never from a browser
+    or command-line argument (which could leak into shell history/process lists).
+    """
+    key = api_key or os.environ.get("OPENAI_API_KEY")
+    if not key:
+        raise SystemExit(
+            "OPENAI_API_KEY is not set. Put it in scripts/.env for slack_bot.py, "
+            "or export it in the shell before using --openai. Do not commit the key."
+        )
+    body = json.dumps({
+        "model": model,
+        "input": prompt,
+        "store": False,
+    }).encode()
+    req = urllib.request.Request(
+        "https://api.openai.com/v1/responses",
+        data=body,
+        headers={
+            "Authorization": f"Bearer {key}",
+            "Content-Type": "application/json",
+            "User-Agent": "OSS-Terminal/0.1",
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            data = json.load(resp)
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode(errors="replace")
+        raise SystemExit(f"OpenAI API returned HTTP {exc.code}: {detail}") from exc
+    except urllib.error.URLError as exc:
+        raise SystemExit(f"Couldn't reach the OpenAI API: {exc}") from exc
+
+    texts = []
+    for item in data.get("output") or []:
+        if item.get("type") != "message":
+            continue
+        for content in item.get("content") or []:
+            if content.get("type") == "output_text" and content.get("text"):
+                texts.append(content["text"])
+    if not texts:
+        raise SystemExit(f"OpenAI API response contained no output text (response id: {data.get('id', 'unknown')}).")
+    return "\n".join(texts).strip()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("ticker")
