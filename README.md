@@ -548,6 +548,42 @@ python scripts/ask.py SNOW --copy       # ...and copy the prompt to the clipboar
 python scripts/ask.py SPCX --question "base/bull/bear price outlook over the next 3 and 6 months" --run
 ```
 
+For a Yahoo-only covered-call screen, including technicals, normalized SEC
+annual fundamentals, Black-Scholes delta/theta estimates, liquidity and
+bid/ask filters, and model-ready JSON:
+
+```
+python scripts/covered_call.py BMNR
+python scripts/covered_call.py BMNR --json
+python scripts/covered_call.py BMNR --prompt
+python scripts/covered_call.py BMNR --run  # sends the grounded prompt to local Ollama
+python scripts/covered_call.py BMNR --openai  # Responses API + optional model-directed web search
+python scripts/covered_call.py BMNR --openai --no-web-search  # structured Yahoo/SEC data only
+
+# Position-aware sizing (one contract per eligible 100-share lot):
+python scripts/covered_call.py BMNR --shares 500 --cost-basis 18 \
+  --protected-core-shares 300 --max-assignment-shares 200
+```
+
+Without `--shares` and `--cost-basis`, ranked contracts are explicitly a
+market watchlist, not a position-sized trade. A strike below supplied cost
+basis is rejected by default. The report uses the Yahoo bid as a conservative
+credit estimate, but Yahoo is an unofficial/delayed source and the normalized
+feed has no exchange quote timestamp; always recheck the live broker chain,
+events, and limit price before an order. It never connects to a brokerage or
+pulls balances/positions; position inputs are only the values explicitly
+passed on the command line. In Slack, `?ask BMNR covered call` invokes the
+same Yahoo screen and local-LLM prompt without pulling private position data.
+Set `ANALYSIS_PROVIDER=openai`, `OPENAI_API_KEY=...`, and optionally
+`OPENAI_MODEL=...` in the gitignored `scripts/.env` to have Slack use OpenAI
+instead of Ollama. `OPENAI_WEB_SEARCH=true` (the default) gives the model an
+optional Responses API web-search tool: it decides whether a decision-relevant
+gap needs public research, prioritizes primary sources, and appends visible
+source links. Yahoo remains authoritative for the supplied option chain; web
+quotes cannot replace it. Only the generated prompt and any explicitly entered
+position inputs are sent to OpenAI; never put the API key in a `VITE_` variable
+or expose it to frontend JavaScript.
+
 What it does, in order:
 
 1. Resolves the ticker against the backend (same SEC-universe check every

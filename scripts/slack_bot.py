@@ -29,6 +29,10 @@ see scripts/.env.example). Required:
 Optional (defaults shown):
   OLLAMA_URL=http://localhost:11434
   OLLAMA_MODEL=martain7r/finance-llama-8b:q4_k_m
+  ANALYSIS_PROVIDER=ollama            # set to openai to use the Responses API
+  OPENAI_API_KEY=...                  # required only for ANALYSIS_PROVIDER=openai
+  OPENAI_MODEL=gpt-5.5
+  OPENAI_WEB_SEARCH=true              # model decides when public research is useful
   POLL_INTERVAL_SECONDS=20
   COMMAND_PREFIX=?ask
   BACKEND_URL / FRONTEND_URL -- same defaults as ask.py
@@ -53,6 +57,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ask as ask_lib  # noqa: E402  (reuse resolve_ticker/build_prompt/run_ollama/etc.)
+import covered_call as covered_call_lib  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 STATE_PATH = REPO_ROOT / "scripts" / ".slackbot_state.json"
@@ -83,6 +88,9 @@ SLACK_BOT_TOKEN = os.environ.get("SLACK_BOT_TOKEN", "")
 SLACK_CHANNEL = os.environ.get("SLACK_CHANNEL", "")
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "martain7r/finance-llama-8b:q4_k_m")
+ANALYSIS_PROVIDER = os.environ.get("ANALYSIS_PROVIDER", "ollama").lower()
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
+OPENAI_WEB_SEARCH = os.environ.get("OPENAI_WEB_SEARCH", "true").lower() not in {"0", "false", "no", "off"}
 POLL_INTERVAL_SECONDS = int(os.environ.get("POLL_INTERVAL_SECONDS", "20"))
 COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX", "?ask").lower()
 
@@ -110,18 +118,29 @@ def resolve_channel_id(channel: str) -> str:
     if channel.startswith("C") and channel.isupper():
         return channel
     target_name = channel.lstrip("#").lower()
-    cursor = None
-    while True:
-        params = {"types": "public_channel,private_channel", "limit": 200}
-        if cursor:
-            params["cursor"] = cursor
-        data = slack_call("conversations.list", params, http_method="GET")
-        for ch in data.get("channels", []):
-            if ch.get("name", "").lower() == target_name:
-                return ch["id"]
-        cursor = (data.get("response_metadata") or {}).get("next_cursor")
-        if not cursor:
-            break
+    # Query public and private channels separately. Asking Slack for both in
+    # one call requires BOTH channels:read and groups:read, which made a bot
+    # configured solely for a public #equity-alerts fail channel discovery
+    # with missing_scope even though it had every permission that public
+    # channel actually needs.
+    for channel_type in ("public_channel", "private_channel"):
+        cursor = None
+        while True:
+            params = {"types": channel_type, "limit": 200}
+            if cursor:
+                params["cursor"] = cursor
+            try:
+                data = slack_call("conversations.list", params, http_method="GET")
+            except RuntimeError as exc:
+                if channel_type == "private_channel" and "missing_scope" in str(exc):
+                    break  # groups:read is optional when the target is public
+                raise
+            for ch in data.get("channels", []):
+                if ch.get("name", "").lower() == target_name:
+                    return ch["id"]
+            cursor = (data.get("response_metadata") or {}).get("next_cursor")
+            if not cursor:
+                break
     raise SystemExit(f"Couldn't find a channel named '{channel}' -- is the bot invited to it?")
 
 
@@ -234,6 +253,17 @@ def build_answer_prompt(ticker: str, extra_question: str) -> tuple[str, dict]:
     profile = ask_lib.resolve_ticker(ticker)
     name = profile.get("name") or ticker
 
+    if re.search(r"\b(covered calls?|sell(?:ing)? calls?)\b", extra_question, re.IGNORECASE):
+        analysis = covered_call_lib.analyze(ticker)
+        prompt = covered_call_lib.build_llm_prompt(analysis, extra_question)
+        prompt += SLACK_FORMATTING_INSTRUCTIONS
+        return prompt, {
+            "name": name,
+            "answer_type": "covered_call",
+            "horizons_days": [covered_call_lib.DEFAULT_MIN_DTE, covered_call_lib.DEFAULT_MAX_DTE],
+            "horizons_assumed": False,
+        }
+
     if extra_question:
         prompt, meta = ask_lib.build_strategy_prompt(ticker, name, extra_question)
         prompt += SLACK_FORMATTING_INSTRUCTIONS
@@ -323,12 +353,35 @@ def to_slack_mrkdwn(text: str) -> str:
     return re.sub(r"\*\*(.+?)\*\*", r"*\1*", result)
 
 
+def truncate_for_slack(text: str, limit: int = MAX_REPLY_CHARS) -> str:
+    """Fit one Slack message without silently deleting web citations.
+
+    run_openai appends cited URLs under ``Sources:``. A naive prefix slice
+    drops that tail first -- exactly the opposite of the requirement that
+    web-derived claims keep visible, clickable citations.
+    """
+    if len(text) <= limit:
+        return text
+    marker = "\n\nSources:\n"
+    if marker in text:
+        body, sources = text.rsplit(marker, 1)
+        source_block = marker + sources
+        # Preserve all sources when they fit in a reasonable portion of the
+        # message; otherwise fall back to a normal truncation rather than
+        # returning a message made almost entirely of URLs.
+        if len(source_block) < limit // 2:
+            available = limit - len(source_block) - len("\n\n_(analysis truncated; sources preserved)_")
+            return body[:max(0, available)].rstrip() + "\n\n_(analysis truncated; sources preserved)_" + source_block
+    return text[:limit - len("\n\n_(truncated)_")] + "\n\n_(truncated)_"
+
+
 def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts: str) -> str | None:
     """Returns the ticker on success (so poll_once can remember it as this
     thread's context for follow-up replies), None on any failure."""
     print(f"[{time.strftime('%H:%M:%S')}] handling ?ask {ticker} {extra_question!r}")
     try:
-        post_message(channel_id, f"\U0001f914 Looking at {ticker}... (local Ollama, can take a few minutes)", thread_ts=thread_ts)
+        provider_label = "OpenAI" if ANALYSIS_PROVIDER == "openai" else "local Ollama"
+        post_message(channel_id, f"\U0001f914 Looking at {ticker}... ({provider_label}, can take a few minutes)", thread_ts=thread_ts)
     except RuntimeError as exc:
         print(f"  warning: couldn't post ack: {exc}")
 
@@ -345,16 +398,25 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
     link = f"{ask_lib.FRONTEND_URL}/c/{ticker}/options"
 
     try:
-        answer = ask_lib.run_ollama(OLLAMA_URL, OLLAMA_MODEL, prompt, timeout=600)
+        if ANALYSIS_PROVIDER == "openai":
+            answer = ask_lib.run_openai(
+                prompt,
+                OPENAI_MODEL,
+                timeout=600,
+                enable_web_search=OPENAI_WEB_SEARCH,
+            )
+        elif ANALYSIS_PROVIDER == "ollama":
+            answer = ask_lib.run_ollama(OLLAMA_URL, OLLAMA_MODEL, prompt, timeout=600)
+        else:
+            raise SystemExit("ANALYSIS_PROVIDER must be 'ollama' or 'openai'")
     except SystemExit as exc:
-        post_message(channel_id, f"Local Ollama couldn't answer this one: {exc}", thread_ts=thread_ts)
+        post_message(channel_id, f"The analysis model couldn't answer this one: {exc}", thread_ts=thread_ts)
         return None
 
-    is_strategy_answer = "horizons_days" in meta  # build_strategy_prompt's meta shape vs. build_prompt's
+    is_strategy_answer = "horizons_days" in meta  # strategy/covered-call meta shape vs. build_prompt's
     violations = check_advice_violations(answer, is_strategy_answer=is_strategy_answer)
     answer = to_slack_mrkdwn(answer.strip())
-    if len(answer) > MAX_REPLY_CHARS:
-        answer = answer[:MAX_REPLY_CHARS] + "\n\n_(truncated)_"
+    answer = truncate_for_slack(answer)
 
     watchlist_note = f"\n_Added {ticker} to the daily scan watchlist._" if added else ""
     if is_strategy_answer:
