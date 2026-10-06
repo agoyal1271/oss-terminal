@@ -427,6 +427,17 @@ def analyze(
     else:
         interpretation.append("No contract passed every default filter; widening liquidity/spread rules would trade data quality for more choices.")
 
+    public_research_hints = [
+        "Confirm earnings, investor events, corporate actions, and ex-dividend dates from primary sources.",
+        "Check material filings or company announcements published after the latest normalized SEC period.",
+        "Research business-model-specific valuation drivers that are not present in the generic Yahoo/SEC dataset.",
+    ]
+    if ticker == "BMNR":
+        public_research_hints.append(
+            "For BMNR, verify current ETH/crypto holdings, cash, staked ETH and yield, fully diluted share count, "
+            "financing/dilution, and premium or discount to crypto NAV using dated company/SEC disclosures."
+        )
+
     return {
         "ticker": ticker,
         "company_name": profile.get("name") or profile.get("title") or ticker,
@@ -456,6 +467,7 @@ def analyze(
             "details": evidence,
         },
         "iv_context": iv_rank,
+        "public_research_hints": public_research_hints,
         "covered_call_filters": {
             "delta": [0.15, 0.35],
             "target_delta": 0.25,
@@ -542,9 +554,18 @@ def build_llm_prompt(result: dict, question: str | None = None) -> str:
     covered-call path."""
     question = question or f"Evaluate the covered-call setup for {result['ticker']}."
     return "\n".join([
-        f"You are reviewing a covered-call market screen for {result['ticker']}. Use ONLY the JSON DATA below.",
+        f"You are reviewing a covered-call market screen for {result['ticker']}. Treat the JSON DATA below as "
+        "authoritative for option quotes, market values, computed indicators, and position inputs.",
         "Every candidate already passed deterministic filters for OTM strike, delta, liquidity, and bid/ask spread.",
         "The Greeks are Black-Scholes estimates from Yahoo IV, not broker-quoted Greeks. Yahoo is unofficial/delayed and has no quote timestamp here.",
+        "If web search is available, decide whether additional public research is needed to answer well. Use it "
+        "for decision-relevant gaps such as confirmed events, new filings/company announcements, corporate actions, "
+        "or business-model-specific valuation drivers. Follow public_research_hints when relevant, but search only "
+        "when the missing context could change the conclusion.",
+        "For public research, prefer SEC filings, company investor-relations material, exchanges, regulators, and "
+        "other primary sources. Cite every externally sourced claim with a visible link and source date. Separate "
+        "PUBLIC CONTEXT from the Yahoo/SEC JSON analysis, disclose conflicts, and never replace the supplied option "
+        "chain with a web-reported quote.",
         "Classify the current setup as FAVORABLE, MARGINAL, or NO SETUP for further review; this is a research classification, not an order instruction.",
         "Compare at most the top three candidates by assignment risk, upside retained, premium yield, liquidity, and time exposure.",
         "Use the bid for credit. Never invent an earnings date, quote, position size, tax fact, or probability.",
@@ -576,6 +597,7 @@ def main() -> None:
     parser.add_argument("--model", default="martain7r/finance-llama-8b:q4_k_m")
     parser.add_argument("--ollama-url", default="http://localhost:11434")
     parser.add_argument("--openai-model", default=os.environ.get("OPENAI_MODEL", "gpt-5.5"))
+    parser.add_argument("--no-web-search", action="store_true", help="disable optional OpenAI public web research")
     args = parser.parse_args()
     if args.shares is not None and args.shares < 0:
         parser.error("--shares must be non-negative")
@@ -607,7 +629,11 @@ def main() -> None:
     elif args.openai:
         import ask as ask_lib
 
-        print(ask_lib.run_openai(build_llm_prompt(result, args.question), args.openai_model))
+        print(ask_lib.run_openai(
+            build_llm_prompt(result, args.question),
+            args.openai_model,
+            enable_web_search=not args.no_web_search,
+        ))
     else:
         print(render_report(result))
 

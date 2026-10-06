@@ -7,6 +7,8 @@ the CLI, while these tests pin the safety-critical filtering and sizing rules.
 from __future__ import annotations
 
 import datetime as dt
+import io
+import json
 import sys
 from pathlib import Path
 
@@ -15,6 +17,7 @@ SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 import covered_call  # noqa: E402
+import ask  # noqa: E402
 import slack_bot  # noqa: E402
 
 
@@ -105,7 +108,8 @@ def test_llm_prompt_preserves_non_actionable_position_boundary():
     }
     prompt = covered_call.build_llm_prompt(result, "covered call?")
 
-    assert "Use ONLY the JSON DATA" in prompt
+    assert "authoritative for option quotes" in prompt
+    assert "additional public research" in prompt
     assert "exact contracts cannot be selected" in prompt
     assert '"actionable": false' in prompt
 
@@ -138,3 +142,65 @@ def test_public_channel_resolution_does_not_require_private_scope(monkeypatch):
 
     assert slack_bot.resolve_channel_id("equity-alerts") == "C123"
     assert calls == ["public_channel"]
+
+
+def test_openai_web_search_is_optional_and_citations_are_rendered(monkeypatch):
+    captured = {}
+    api_response = {
+        "id": "resp_test",
+        "output": [{
+            "type": "message",
+            "content": [{
+                "type": "output_text",
+                "text": "A public event may matter.",
+                "annotations": [{
+                    "type": "url_citation",
+                    "title": "SEC filing",
+                    "url": "https://www.sec.gov/example",
+                }],
+            }],
+        }],
+    }
+
+    def fake_urlopen(request, timeout=0):
+        captured["payload"] = json.loads(request.data)
+        return io.BytesIO(json.dumps(api_response).encode())
+
+    monkeypatch.setattr(ask.urllib.request, "urlopen", fake_urlopen)
+    answer = ask.run_openai("analyze", "test-model", api_key="test-key")
+
+    assert captured["payload"]["tools"] == [{
+        "type": "web_search",
+        "search_context_size": "medium",
+        "external_web_access": True,
+    }]
+    assert captured["payload"]["tool_choice"] == "auto"
+    assert captured["payload"]["store"] is False
+    assert "SEC filing: https://www.sec.gov/example" in answer
+
+
+def test_openai_web_search_can_be_disabled(monkeypatch):
+    captured = {}
+    api_response = {
+        "id": "resp_test",
+        "output": [{"type": "message", "content": [{"type": "output_text", "text": "done"}]}],
+    }
+
+    def fake_urlopen(request, timeout=0):
+        captured["payload"] = json.loads(request.data)
+        return io.BytesIO(json.dumps(api_response).encode())
+
+    monkeypatch.setattr(ask.urllib.request, "urlopen", fake_urlopen)
+    ask.run_openai("analyze", "test-model", api_key="test-key", enable_web_search=False)
+
+    assert "tools" not in captured["payload"]
+
+
+def test_slack_truncation_preserves_web_sources():
+    answer = "A" * 5000 + "\n\nSources:\n- SEC filing: https://www.sec.gov/example"
+
+    truncated = slack_bot.truncate_for_slack(answer, limit=500)
+
+    assert len(truncated) <= 500
+    assert "analysis truncated; sources preserved" in truncated
+    assert "https://www.sec.gov/example" in truncated

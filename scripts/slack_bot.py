@@ -32,6 +32,7 @@ Optional (defaults shown):
   ANALYSIS_PROVIDER=ollama            # set to openai to use the Responses API
   OPENAI_API_KEY=...                  # required only for ANALYSIS_PROVIDER=openai
   OPENAI_MODEL=gpt-5.5
+  OPENAI_WEB_SEARCH=true              # model decides when public research is useful
   POLL_INTERVAL_SECONDS=20
   COMMAND_PREFIX=?ask
   BACKEND_URL / FRONTEND_URL -- same defaults as ask.py
@@ -89,6 +90,7 @@ OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "martain7r/finance-llama-8b:q4_k_m")
 ANALYSIS_PROVIDER = os.environ.get("ANALYSIS_PROVIDER", "ollama").lower()
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.5")
+OPENAI_WEB_SEARCH = os.environ.get("OPENAI_WEB_SEARCH", "true").lower() not in {"0", "false", "no", "off"}
 POLL_INTERVAL_SECONDS = int(os.environ.get("POLL_INTERVAL_SECONDS", "20"))
 COMMAND_PREFIX = os.environ.get("COMMAND_PREFIX", "?ask").lower()
 
@@ -351,6 +353,28 @@ def to_slack_mrkdwn(text: str) -> str:
     return re.sub(r"\*\*(.+?)\*\*", r"*\1*", result)
 
 
+def truncate_for_slack(text: str, limit: int = MAX_REPLY_CHARS) -> str:
+    """Fit one Slack message without silently deleting web citations.
+
+    run_openai appends cited URLs under ``Sources:``. A naive prefix slice
+    drops that tail first -- exactly the opposite of the requirement that
+    web-derived claims keep visible, clickable citations.
+    """
+    if len(text) <= limit:
+        return text
+    marker = "\n\nSources:\n"
+    if marker in text:
+        body, sources = text.rsplit(marker, 1)
+        source_block = marker + sources
+        # Preserve all sources when they fit in a reasonable portion of the
+        # message; otherwise fall back to a normal truncation rather than
+        # returning a message made almost entirely of URLs.
+        if len(source_block) < limit // 2:
+            available = limit - len(source_block) - len("\n\n_(analysis truncated; sources preserved)_")
+            return body[:max(0, available)].rstrip() + "\n\n_(analysis truncated; sources preserved)_" + source_block
+    return text[:limit - len("\n\n_(truncated)_")] + "\n\n_(truncated)_"
+
+
 def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts: str) -> str | None:
     """Returns the ticker on success (so poll_once can remember it as this
     thread's context for follow-up replies), None on any failure."""
@@ -375,7 +399,12 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
 
     try:
         if ANALYSIS_PROVIDER == "openai":
-            answer = ask_lib.run_openai(prompt, OPENAI_MODEL, timeout=600)
+            answer = ask_lib.run_openai(
+                prompt,
+                OPENAI_MODEL,
+                timeout=600,
+                enable_web_search=OPENAI_WEB_SEARCH,
+            )
         elif ANALYSIS_PROVIDER == "ollama":
             answer = ask_lib.run_ollama(OLLAMA_URL, OLLAMA_MODEL, prompt, timeout=600)
         else:
@@ -387,8 +416,7 @@ def handle_command(channel_id: str, ticker: str, extra_question: str, thread_ts:
     is_strategy_answer = "horizons_days" in meta  # strategy/covered-call meta shape vs. build_prompt's
     violations = check_advice_violations(answer, is_strategy_answer=is_strategy_answer)
     answer = to_slack_mrkdwn(answer.strip())
-    if len(answer) > MAX_REPLY_CHARS:
-        answer = answer[:MAX_REPLY_CHARS] + "\n\n_(truncated)_"
+    answer = truncate_for_slack(answer)
 
     watchlist_note = f"\n_Added {ticker} to the daily scan watchlist._" if added else ""
     if is_strategy_answer:

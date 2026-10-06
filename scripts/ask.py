@@ -483,8 +483,10 @@ def build_prompt(ticker: str, name: str, window: dict) -> str:
         "RULES (do not break these, even if it feels natural to): no buy/sell advice, no options strategies "
         "(no \"buy calls\", \"long call\", \"bear put spread\", \"collar\", or similar). Do not mention or invent "
         "options Greeks (Delta, Gamma, Theta, Vega) or any bid/ask price -- none are provided below and you must "
-        "not make them up. Use ONLY the numbers listed in DATA below; if something isn't listed, say it's not "
-        "available rather than estimating or inventing it.",
+        "not make them up. Treat DATA below as authoritative for every market number. If web search is available, "
+        "you may use it only for decision-relevant public context missing from DATA (for example a confirmed "
+        "company event, filing, or corporate action), with a visible citation. Keep that PUBLIC CONTEXT separate "
+        "from the computed evidence tally and never substitute a web quote for the Yahoo snapshot.",
         "",
         f"DATA (as of {window['as_of']}, underlying price ${window['underlying_price']}):",
         "",
@@ -621,9 +623,12 @@ def build_strategy_prompt(ticker: str, name: str, question: str, horizons_days: 
 
     lines = [
         f"You are a research assistant helping a retail investor reason through options strategy questions for "
-        f"{name} ({ticker}). Answer the QUESTION at the very end of this prompt, using ONLY the DATA below plus "
-        "ordinary options-pricing reasoning -- do not invent any figure (price, IV, Greek, OI, volume, or "
-        "probability) that isn't either listed in DATA or a direct arithmetic consequence of numbers that are.",
+        f"{name} ({ticker}). Answer the QUESTION at the very end of this prompt. Treat DATA below as authoritative "
+        "for price, IV, Greeks, OI, volume, probability, and every other market-chain figure. If web search is "
+        "available, use it selectively for decision-relevant PUBLIC CONTEXT missing from DATA -- confirmed events, "
+        "new SEC/company filings, corporate actions, business-model-specific valuation drivers, or material sector/"
+        "macro developments. Cite every web-derived claim, prefer primary sources, state source dates, and never "
+        "replace the timestamped Yahoo chain with a web-reported quote. If sources conflict, disclose the conflict.",
         "",
         "RULES (do not break these, even if it feels natural to):",
         "  - Every Greek (delta, theta, vega) and every probability-of-profit figure in DATA is a Black-Scholes "
@@ -639,8 +644,9 @@ def build_strategy_prompt(ticker: str, name: str, question: str, horizons_days: 
         "  - If the question needs a specific date, strike, target price, or expiration that isn't stated and "
         "isn't reasonably inferable from DATA below, do not guess at it -- ask a short, specific clarifying "
         "question about exactly what's missing instead of answering as if you knew.",
-        "  - This tool has no earnings calendar -- if the question needs a confirmed earnings/event date, say that "
-        "plainly and point to the recent filings list (or the company's own IR page) rather than inventing a date.",
+        "  - DATA has no earnings calendar. If web search is available, verify event dates against the company's "
+        "own investor-relations material or an SEC filing and cite it. Otherwise say the date is unavailable; never "
+        "infer or invent one.",
         "  - Not investment advice; this is descriptive market data, not a recommendation.",
         "",
         f"DATA (as of {datetime.date.today().isoformat()}, {ticker} spot price {_fmt_usd(spot)}):",
@@ -822,7 +828,13 @@ def run_ollama(base_url: str, model: str, prompt: str, timeout: int = 600) -> st
     return data.get("response", "").strip()
 
 
-def run_openai(prompt: str, model: str, api_key: str | None = None, timeout: int = 600) -> str:
+def run_openai(
+    prompt: str,
+    model: str,
+    api_key: str | None = None,
+    timeout: int = 600,
+    enable_web_search: bool = True,
+) -> str:
     """Send a grounded prompt to the OpenAI Responses API.
 
     Stdlib-only, like the rest of this script. ``store`` is disabled because
@@ -836,11 +848,27 @@ def run_openai(prompt: str, model: str, api_key: str | None = None, timeout: int
             "OPENAI_API_KEY is not set. Put it in scripts/.env for slack_bot.py, "
             "or export it in the shell before using --openai. Do not commit the key."
         )
-    body = json.dumps({
+    payload: dict = {
         "model": model,
         "input": prompt,
         "store": False,
-    }).encode()
+    }
+    if enable_web_search:
+        # `auto` means the model decides whether public research is useful;
+        # a deterministic chain question need not pay the latency/tool cost,
+        # while a missing event date or company-specific valuation driver can
+        # trigger a live search. Source metadata is requested for auditing and
+        # url_citation annotations are rendered below for Slack/terminal users.
+        payload.update({
+            "tools": [{
+                "type": "web_search",
+                "search_context_size": "medium",
+                "external_web_access": True,
+            }],
+            "tool_choice": "auto",
+            "include": ["web_search_call.action.sources"],
+        })
+    body = json.dumps(payload).encode()
     req = urllib.request.Request(
         "https://api.openai.com/v1/responses",
         data=body,
@@ -860,15 +888,35 @@ def run_openai(prompt: str, model: str, api_key: str | None = None, timeout: int
         raise SystemExit(f"Couldn't reach the OpenAI API: {exc}") from exc
 
     texts = []
+    citations: list[tuple[str, str]] = []
     for item in data.get("output") or []:
         if item.get("type") != "message":
             continue
         for content in item.get("content") or []:
             if content.get("type") == "output_text" and content.get("text"):
                 texts.append(content["text"])
+                for annotation in content.get("annotations") or []:
+                    if annotation.get("type") != "url_citation":
+                        continue
+                    # Responses API annotations currently expose url/title at
+                    # the top level. Accept the nested shape too so this stays
+                    # robust if an SDK-shaped response is proxied here.
+                    citation = annotation.get("url_citation") or annotation
+                    url = citation.get("url")
+                    if url:
+                        citations.append((citation.get("title") or url, url))
     if not texts:
         raise SystemExit(f"OpenAI API response contained no output text (response id: {data.get('id', 'unknown')}).")
-    return "\n".join(texts).strip()
+    answer = "\n".join(texts).strip()
+    if citations:
+        unique = []
+        seen_urls = set()
+        for title, url in citations:
+            if url not in seen_urls:
+                seen_urls.add(url)
+                unique.append((title, url))
+        answer += "\n\nSources:\n" + "\n".join(f"- {title}: {url}" for title, url in unique)
+    return answer
 
 
 def main() -> None:

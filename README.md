@@ -557,7 +557,8 @@ python scripts/covered_call.py BMNR
 python scripts/covered_call.py BMNR --json
 python scripts/covered_call.py BMNR --prompt
 python scripts/covered_call.py BMNR --run  # sends the grounded prompt to local Ollama
-python scripts/covered_call.py BMNR --openai  # uses OPENAI_API_KEY + Responses API
+python scripts/covered_call.py BMNR --openai  # Responses API + optional model-directed web search
+python scripts/covered_call.py BMNR --openai --no-web-search  # structured Yahoo/SEC data only
 
 # Position-aware sizing (one contract per eligible 100-share lot):
 python scripts/covered_call.py BMNR --shares 500 --cost-basis 18 \
@@ -575,8 +576,13 @@ passed on the command line. In Slack, `?ask BMNR covered call` invokes the
 same Yahoo screen and local-LLM prompt without pulling private position data.
 Set `ANALYSIS_PROVIDER=openai`, `OPENAI_API_KEY=...`, and optionally
 `OPENAI_MODEL=...` in the gitignored `scripts/.env` to have Slack use OpenAI
-instead of Ollama. Only the generated prompt is sent to OpenAI; never put the
-API key in a `VITE_` variable or expose it to frontend JavaScript.
+instead of Ollama. `OPENAI_WEB_SEARCH=true` (the default) gives the model an
+optional Responses API web-search tool: it decides whether a decision-relevant
+gap needs public research, prioritizes primary sources, and appends visible
+source links. Yahoo remains authoritative for the supplied option chain; web
+quotes cannot replace it. Only the generated prompt and any explicitly entered
+position inputs are sent to OpenAI; never put the API key in a `VITE_` variable
+or expose it to frontend JavaScript.
 
 What it does, in order:
 
