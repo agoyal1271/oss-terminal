@@ -1,7 +1,7 @@
 {
   "AAPL.unusual_activity.AAPL260828C00360000": "2026-07-26",
-  "AAPL.term_structure_backwardation": "2026-10-01",
-  "MSFT.term_structure_backwardation": "2026-10-01",
+  "AAPL.term_structure_backwardation": "2026-10-07",
+  "MSFT.term_structure_backwardation": "2026-10-07",
   "TSLA.unusual_activity.TSLA260828P00260000": "2026-07-26",
   "TSLA.unusual_activity.TSLA260828P00255000": "2026-07-26",
   "JPM.new_52w_high": "2026-08-12",
@@ -36,7 +36,7 @@
   "BMNR.skew_inverted": "2026-10-02",
   "BRK-B.golden_cross": "2026-07-29",
   "BRK-B.iv_rank_high": "2026-10-06",
-  "GOOGL.term_structure_backwardation": "2026-09-29",
+  "GOOGL.term_structure_backwardation": "2026-10-07",
   "GOOGL.insider_cluster.31": "2026-07-29",
   "JPM.term_structure_backwardation": "2026-10-01",
   "MSFT.iv_rank_high": "2026-07-29",
@@ -111,7 +111,7 @@
   "NOW.term_structure_backwardation": "2026-08-27",
   "NVDA.term_structure_backwardation": "2026-10-06",
   "SPCX.unusual_activity.SPCX260904C00130000": "2026-08-07",
-  "TSLA.term_structure_backwardation": "2026-09-29",
+  "TSLA.term_structure_backwardation": "2026-10-07",
   "MSFT.unusual_activity.MSFT260904C00560000": "2026-08-07",
   "MSFT.unusual_activity.MSFT260904P00500000": "2026-08-07",
   "MSFT.unusual_activity.MSFT260904P00495000": "2026-08-07",
@@ -309,5 +309,9 @@
   "JPM.insider_cluster.41": "2026-10-06",
   "SPCX.unusual_activity.SPCX261106C00200000": "2026-10-06",
   "SPCX.unusual_activity.SPCX261106C00167500": "2026-10-06",
-  "TSLA.unusual_activity.TSLA261106P00370000": "2026-10-06"
+  "TSLA.unusual_activity.TSLA261106P00370000": "2026-10-06",
+  "NVDA.new_52w_high": "2026-10-07",
+  "NVDA.unusual_activity.NVDA261106P00240000": "2026-10-07",
+  "SPCX.unusual_activity.SPCX261106P00160000": "2026-10-07",
+  "SPCX.unusual_activity.SPCX261106P00170000": "2026-10-07"
 }
