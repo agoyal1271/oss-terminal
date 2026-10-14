@@ -1,15 +1,18 @@
 {
-  "date": "2026-10-13",
+  "date": "2026-10-14",
   "findings": [
     {
-      "key": "AAPL.pc_ratio_deviation",
+      "key": "AAPL.unusual_activity.AAPL261113C00370000",
       "ticker": "AAPL",
       "category": "options",
-      "severity": "info",
-      "title": "AAPL: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.93 vs its own 10-day average of 0.54.",
-      "value": 0.9302417756638922,
-      "ctx": {}
+      "severity": "warn",
+      "title": "AAPL: unusual options activity",
+      "detail": "AAPL261113C00370000 (~30d tenor): volume 1,379 vs open interest 455 -- new positioning, not just today's expiring weekly noise.",
+      "value": 1379,
+      "ctx": {
+        "strike": 370.0,
+        "expiration": 1794528000
+      }
     },
     {
       "key": "AAPL.iv_rank_high",
@@ -17,8 +20,8 @@
       "category": "options",
       "severity": "info",
       "title": "AAPL: IV rank extreme (high)",
-      "detail": "IV rank is 88 (55 days of history) -- premium is rich relative to its own recent range.",
-      "value": 87.62631266098676,
+      "detail": "IV rank is 86 (56 days of history) -- premium is rich relative to its own recent range.",
+      "value": 86.28393104814742,
       "ctx": {}
     },
     {
@@ -27,41 +30,19 @@
       "category": "options",
       "severity": "info",
       "title": "AMZN: IV rank extreme (high)",
-      "detail": "IV rank is 81 (55 days of history) -- premium is rich relative to its own recent range.",
-      "value": 80.89937106918238,
+      "detail": "IV rank is 82 (56 days of history) -- premium is rich relative to its own recent range.",
+      "value": 82.44025157232704,
       "ctx": {}
     },
     {
-      "key": "BMNR.pc_ratio_deviation",
-      "ticker": "BMNR",
-      "category": "options",
-      "severity": "info",
-      "title": "BMNR: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.10 vs its own 10-day average of 1.01.",
-      "value": 0.10192307692307692,
-      "ctx": {}
-    },
-    {
-      "key": "BRK-B.pc_ratio_deviation",
+      "key": "BRK-B.rsi_overbought",
       "ticker": "BRK-B",
-      "category": "options",
+      "category": "technical",
       "severity": "info",
-      "title": "BRK-B: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.34 vs its own 10-day average of 1.12.",
-      "value": 0.33697632058287796,
+      "title": "BRK-B: RSI crossed into overbought",
+      "detail": "RSI just crossed above 70 (now 72).",
+      "value": 71.88076737622274,
       "ctx": {}
-    },
-    {
-      "key": "BRK-B.term_structure_backwardation",
-      "ticker": "BRK-B",
-      "category": "options",
-      "severity": "warn",
-      "title": "BRK-B: IV term structure flipped into backwardation",
-      "detail": "IV spikes at expiration 1795737600 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
-      "value": null,
-      "ctx": {
-        "spike_expiration": 1795737600
-      }
     },
     {
       "key": "BRK-B.iv_rank_high",
@@ -69,18 +50,8 @@
       "category": "options",
       "severity": "info",
       "title": "BRK-B: IV rank extreme (high)",
-      "detail": "IV rank is 92 (55 days of history) -- premium is rich relative to its own recent range.",
-      "value": 92.0534168658808,
-      "ctx": {}
-    },
-    {
-      "key": "GLD.pc_ratio_deviation",
-      "ticker": "GLD",
-      "category": "options",
-      "severity": "info",
-      "title": "GLD: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 1.49 vs its own 10-day average of 0.63.",
-      "value": 1.4933655006031363,
+      "detail": "IV rank is 100 (56 days of history) -- premium is rich relative to its own recent range.",
+      "value": 100.0,
       "ctx": {}
     },
     {
@@ -89,8 +60,8 @@
       "category": "options",
       "severity": "info",
       "title": "GOOGL: IV rank extreme (high)",
-      "detail": "IV rank is 94 (55 days of history) -- premium is rich relative to its own recent range.",
-      "value": 93.81677298164598,
+      "detail": "IV rank is 95 (56 days of history) -- premium is rich relative to its own recent range.",
+      "value": 95.29213790944311,
       "ctx": {}
     },
     {
@@ -99,21 +70,9 @@
       "category": "options",
       "severity": "info",
       "title": "JPM: IV rank extreme (high)",
-      "detail": "IV rank is 90 (55 days of history) -- premium is rich relative to its own recent range.",
-      "value": 90.2189781021898,
+      "detail": "IV rank is 89 (56 days of history) -- premium is rich relative to its own recent range.",
+      "value": 89.01082305562548,
       "ctx": {}
-    },
-    {
-      "key": "JPM.8k.0001628280-26-065582",
-      "ticker": "JPM",
-      "category": "filing",
-      "severity": "info",
-      "title": "JPM: earnings 8-K filed",
-      "detail": "Results of Operations (2.02) filed today. https://www.sec.gov/Archives/edgar/data/19617/000162828026065582/0001628280-26-065582-index.htm",
-      "value": null,
-      "ctx": {
-        "accession": "0001628280-26-065582"
-      }
     },
     {
       "key": "MSFT.pc_ratio_deviation",
@@ -121,22 +80,55 @@
       "category": "options",
       "severity": "info",
       "title": "MSFT: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.27 vs its own 10-day average of 0.56.",
-      "value": 0.27025836758661187,
+      "detail": "Put/call volume ratio is 0.84 vs its own 10-day average of 0.51.",
+      "value": 0.8424182358771061,
       "ctx": {}
     },
     {
-      "key": "NVDA.unusual_activity.NVDA261113C00220000",
+      "key": "NOW.pc_ratio_deviation",
+      "ticker": "NOW",
+      "category": "options",
+      "severity": "info",
+      "title": "NOW: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.43 vs its own 10-day average of 1.05.",
+      "value": 0.4311377245508982,
+      "ctx": {}
+    },
+    {
+      "key": "NVDA.unusual_activity.NVDA261113P00200000",
       "ticker": "NVDA",
       "category": "options",
       "severity": "warn",
       "title": "NVDA: unusual options activity",
-      "detail": "NVDA261113C00220000 (~30d tenor): volume 2,165 vs open interest 411 -- new positioning, not just today's expiring weekly noise.",
-      "value": 2165,
+      "detail": "NVDA261113P00200000 (~30d tenor): volume 8,160 vs open interest 1,593 -- new positioning, not just today's expiring weekly noise.",
+      "value": 8160,
       "ctx": {
-        "strike": 220.0,
+        "strike": 200.0,
         "expiration": 1794528000
       }
+    },
+    {
+      "key": "NVDA.unusual_activity.NVDA261113P00165000",
+      "ticker": "NVDA",
+      "category": "options",
+      "severity": "warn",
+      "title": "NVDA: unusual options activity",
+      "detail": "NVDA261113P00165000 (~30d tenor): volume 2,435 vs open interest 439 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2435,
+      "ctx": {
+        "strike": 165.0,
+        "expiration": 1794528000
+      }
+    },
+    {
+      "key": "NVDA.pc_ratio_deviation",
+      "ticker": "NVDA",
+      "category": "options",
+      "severity": "info",
+      "title": "NVDA: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 1.16 vs its own 10-day average of 0.63.",
+      "value": 1.1571669133030567,
+      "ctx": {}
     },
     {
       "key": "SNOW.pc_ratio_deviation",
@@ -144,8 +136,8 @@
       "category": "options",
       "severity": "info",
       "title": "SNOW: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.25 vs its own 10-day average of 0.70.",
-      "value": 0.2495164410058027,
+      "detail": "Put/call volume ratio is 1.13 vs its own 10-day average of 0.71.",
+      "value": 1.1337579617834395,
       "ctx": {}
     },
     {
@@ -154,35 +146,9 @@
       "category": "options",
       "severity": "info",
       "title": "SPCX: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 1.33 vs its own 10-day average of 0.77.",
-      "value": 1.3341495992876224,
+      "detail": "Put/call volume ratio is 1.35 vs its own 10-day average of 0.82.",
+      "value": 1.3455910666153255,
       "ctx": {}
-    },
-    {
-      "key": "TSLA.unusual_activity.TSLA261113C00375000",
-      "ticker": "TSLA",
-      "category": "options",
-      "severity": "warn",
-      "title": "TSLA: unusual options activity",
-      "detail": "TSLA261113C00375000 (~30d tenor): volume 2,617 vs open interest 344 -- new positioning, not just today's expiring weekly noise.",
-      "value": 2617,
-      "ctx": {
-        "strike": 375.0,
-        "expiration": 1794528000
-      }
-    },
-    {
-      "key": "TSLA.unusual_activity.TSLA261113P00375000",
-      "ticker": "TSLA",
-      "category": "options",
-      "severity": "warn",
-      "title": "TSLA: unusual options activity",
-      "detail": "TSLA261113P00375000 (~30d tenor): volume 1,479 vs open interest 121 -- new positioning, not just today's expiring weekly noise.",
-      "value": 1479,
-      "ctx": {
-        "strike": 375.0,
-        "expiration": 1794528000
-      }
     },
     {
       "key": "TSLA.iv_rank_high",
@@ -190,22 +156,19 @@
       "category": "options",
       "severity": "info",
       "title": "TSLA: IV rank extreme (high)",
-      "detail": "IV rank is 87 (55 days of history) -- premium is rich relative to its own recent range.",
-      "value": 86.85991852083986,
+      "detail": "IV rank is 88 (56 days of history) -- premium is rich relative to its own recent range.",
+      "value": 87.71544970228767,
       "ctx": {}
     }
   ],
   "posted": [
-    "BRK-B.term_structure_backwardation",
-    "NVDA.unusual_activity.NVDA261113C00220000",
-    "TSLA.unusual_activity.TSLA261113C00375000",
-    "TSLA.unusual_activity.TSLA261113P00375000",
-    "AAPL.pc_ratio_deviation",
-    "BRK-B.iv_rank_high",
-    "JPM.8k.0001628280-26-065582"
+    "AAPL.unusual_activity.AAPL261113C00370000",
+    "NVDA.unusual_activity.NVDA261113P00200000",
+    "NVDA.unusual_activity.NVDA261113P00165000",
+    "BRK-B.rsi_overbought",
+    "NOW.pc_ratio_deviation"
   ],
   "scan_errors": [
-    "MSFT: prices: failed to fetch https://query1.finance.yahoo.com/v8/finance/chart/MSFT: The read operation timed out",
     "NUGT: request failed -- HTTP Error 404: Not Found",
     "SOXL: request failed -- HTTP Error 404: Not Found"
   ],
