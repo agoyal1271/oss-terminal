@@ -330,5 +330,9 @@
   "TSLA.unusual_activity.TSLA261113P00375000": "2026-10-13",
   "AAPL.unusual_activity.AAPL261113C00370000": "2026-10-14",
   "NVDA.unusual_activity.NVDA261113P00200000": "2026-10-14",
-  "NVDA.unusual_activity.NVDA261113P00165000": "2026-10-14"
+  "NVDA.unusual_activity.NVDA261113P00165000": "2026-10-14",
+  "BMNR.unusual_activity.BMNR261113C00026000": "2026-10-15",
+  "BMNR.unusual_activity.BMNR261113C00022000": "2026-10-15",
+  "NVDA.unusual_activity.NVDA261113C00215000": "2026-10-15",
+  "NVDA.unusual_activity.NVDA261113P00185000": "2026-10-15"
 }
