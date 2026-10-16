@@ -68,7 +68,7 @@
   "AMZN.rsi_overbought": "2026-08-03",
   "AMZN.new_52w_high": "2026-08-03",
   "AMZN.unusual_activity.AMZN260904P00260000": "2026-08-03",
-  "BMNR.pc_ratio_deviation": "2026-10-09",
+  "BMNR.pc_ratio_deviation": "2026-10-16",
   "COIN.pc_ratio_deviation": "2026-10-13",
   "GLD.unusual_activity.GLD260904C00405000": "2026-08-03",
   "GLD.unusual_activity.GLD260904P00350000": "2026-08-03",
@@ -334,5 +334,10 @@
   "BMNR.unusual_activity.BMNR261113C00026000": "2026-10-15",
   "BMNR.unusual_activity.BMNR261113C00022000": "2026-10-15",
   "NVDA.unusual_activity.NVDA261113C00215000": "2026-10-15",
-  "NVDA.unusual_activity.NVDA261113P00185000": "2026-10-15"
+  "NVDA.unusual_activity.NVDA261113P00185000": "2026-10-15",
+  "COIN.unusual_activity.COIN261113C00177500": "2026-10-16",
+  "NVDA.unusual_activity.NVDA261113P00160000": "2026-10-16",
+  "NVDA.unusual_activity.NVDA261113P00105000": "2026-10-16",
+  "NVDA.unusual_activity.NVDA261113P00145000": "2026-10-16",
+  "SPCX.unusual_activity.SPCX261113C00147000": "2026-10-16"
 }
