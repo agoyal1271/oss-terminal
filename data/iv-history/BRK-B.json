@@ -525,9 +525,9 @@
     "ticker": "BRK-B",
     "date": "2026-10-20",
     "expiration": 1795132800,
-    "underlying_price": 532.23,
-    "atm_strike": 530.0,
-    "call_iv": 0.18570760589599605,
-    "put_iv": 0.1606529248046875
+    "underlying_price": 539.82,
+    "atm_strike": 540.0,
+    "call_iv": 0.17936001312255856,
+    "put_iv": 0.15229119201660157
   }
 ]

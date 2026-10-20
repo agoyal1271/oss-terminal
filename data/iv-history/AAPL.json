@@ -525,9 +525,9 @@
     "ticker": "AAPL",
     "date": "2026-10-20",
     "expiration": 1795132800,
-    "underlying_price": 342.94,
-    "atm_strike": 345.0,
-    "call_iv": 0.28064684204101553,
-    "put_iv": 0.25699595550537113
+    "underlying_price": 339.5,
+    "atm_strike": 340.0,
+    "call_iv": 0.2803416693115234,
+    "put_iv": 0.255439574584961
   }
 ]

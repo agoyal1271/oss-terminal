@@ -525,9 +525,9 @@
     "ticker": "JPM",
     "date": "2026-10-20",
     "expiration": 1795132800,
-    "underlying_price": 333.53,
+    "underlying_price": 335.26,
     "atm_strike": 335.0,
-    "call_iv": 0.2461012890625,
-    "put_iv": 0.20887021606445308
+    "call_iv": 0.23035437622070312,
+    "put_iv": 0.19657175506591795
   }
 ]

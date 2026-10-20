@@ -525,9 +525,9 @@
     "ticker": "NVDA",
     "date": "2026-10-20",
     "expiration": 1795132800,
-    "underlying_price": 217.09,
+    "underlying_price": 216.47,
     "atm_strike": 215.0,
-    "call_iv": 0.41644870666503897,
-    "put_iv": 0.38068246276855466
+    "call_iv": 0.4161435339355468,
+    "put_iv": 0.38355108642578123
   }
 ]
