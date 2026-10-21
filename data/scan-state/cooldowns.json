@@ -1,7 +1,7 @@
 {
   "AAPL.unusual_activity.AAPL260828C00360000": "2026-07-26",
   "AAPL.term_structure_backwardation": "2026-10-13",
-  "MSFT.term_structure_backwardation": "2026-10-07",
+  "MSFT.term_structure_backwardation": "2026-10-21",
   "TSLA.unusual_activity.TSLA260828P00260000": "2026-07-26",
   "TSLA.unusual_activity.TSLA260828P00255000": "2026-07-26",
   "JPM.new_52w_high": "2026-08-12",
@@ -21,7 +21,7 @@
   "BRK-B.iv_rank_low": "2026-08-25",
   "GLD.unusual_activity.GLD260828C00402000": "2026-07-28",
   "GLD.unusual_activity.GLD260828C00404000": "2026-07-28",
-  "GLD.term_structure_backwardation": "2026-10-13",
+  "GLD.term_structure_backwardation": "2026-10-21",
   "GOOGL.unusual_activity.GOOGL260828C00390000": "2026-07-28",
   "GOOGL.iv_rank_low": "2026-08-27",
   "JPM.iv_rank_high": "2026-10-19",
@@ -57,7 +57,7 @@
   "AAPL.unusual_activity.AAPL260828C00320000": "2026-07-31",
   "AAPL.unusual_activity.AAPL260828P00280000": "2026-07-31",
   "AAPL.unusual_activity.AAPL260828C00305000": "2026-07-31",
-  "AAPL.pc_ratio_deviation": "2026-10-13",
+  "AAPL.pc_ratio_deviation": "2026-10-21",
   "AMZN.unusual_activity.AMZN260828C00310000": "2026-07-31",
   "AMZN.unusual_activity.AMZN260828C00280000": "2026-07-31",
   "AMZN.unusual_activity.AMZN260828C00300000": "2026-07-31",
@@ -108,7 +108,7 @@
   "GLD.unusual_activity.GLD260904P00370000": "2026-08-07",
   "GOOGL.unusual_activity.GOOGL260904C00425000": "2026-08-07",
   "MSFT.unusual_activity.MSFT260904P00420000": "2026-08-07",
-  "NOW.term_structure_backwardation": "2026-10-10",
+  "NOW.term_structure_backwardation": "2026-10-21",
   "NVDA.term_structure_backwardation": "2026-10-13",
   "SPCX.unusual_activity.SPCX260904C00130000": "2026-08-07",
   "TSLA.term_structure_backwardation": "2026-10-19",
@@ -345,5 +345,8 @@
   "AMZN.unusual_activity.AMZN261120C00320000": "2026-10-19",
   "GOOGL.unusual_activity.GOOGL261120C00415000": "2026-10-19",
   "SPCX.8k.0001628280-26-066482": "2026-10-20",
-  "TSLA.unusual_activity.TSLA261120P00375000": "2026-10-20"
+  "TSLA.unusual_activity.TSLA261120P00375000": "2026-10-20",
+  "GLD.unusual_activity.GLD261120P00425000": "2026-10-21",
+  "TSLA.unusual_activity.TSLA261120C00515000": "2026-10-21",
+  "TSLA.8k.0001628280-26-066738": "2026-10-21"
 }
