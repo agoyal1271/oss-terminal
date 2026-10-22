@@ -1,0 +1,277 @@
+{
+  "date": "2026-10-22",
+  "findings": [
+    {
+      "key": "AAPL.new_52w_high",
+      "ticker": "AAPL",
+      "category": "technical",
+      "severity": "warn",
+      "title": "AAPL: new 52-week high",
+      "detail": "Closed at 348.22, above the prior 52-week high of 348.15.",
+      "value": 348.2200012207031,
+      "ctx": {}
+    },
+    {
+      "key": "AAPL.unusual_activity.AAPL261120P00360000",
+      "ticker": "AAPL",
+      "category": "options",
+      "severity": "warn",
+      "title": "AAPL: unusual options activity",
+      "detail": "AAPL261120P00360000 (~30d tenor): volume 2,079 vs open interest 657 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2079,
+      "ctx": {
+        "strike": 360.0,
+        "expiration": 1795132800
+      }
+    },
+    {
+      "key": "AAPL.iv_rank_high",
+      "ticker": "AAPL",
+      "category": "options",
+      "severity": "info",
+      "title": "AAPL: IV rank extreme (high)",
+      "detail": "IV rank is 86 (60 days of history) -- premium is rich relative to its own recent range.",
+      "value": 85.5557757083416,
+      "ctx": {}
+    },
+    {
+      "key": "AAPL.insider_cluster.43",
+      "ticker": "AAPL",
+      "category": "filing",
+      "severity": "info",
+      "title": "AAPL: insider filing cluster",
+      "detail": "3 Form 4 filings in the last 5 days.",
+      "value": 3,
+      "ctx": {}
+    },
+    {
+      "key": "AMZN.iv_rank_high",
+      "ticker": "AMZN",
+      "category": "options",
+      "severity": "info",
+      "title": "AMZN: IV rank extreme (high)",
+      "detail": "IV rank is 84 (60 days of history) -- premium is rich relative to its own recent range.",
+      "value": 84.23899371069183,
+      "ctx": {}
+    },
+    {
+      "key": "BRK-B.new_52w_high",
+      "ticker": "BRK-B",
+      "category": "technical",
+      "severity": "warn",
+      "title": "BRK-B: new 52-week high",
+      "detail": "Closed at 546.97, above the prior 52-week high of 543.34.",
+      "value": 546.969970703125,
+      "ctx": {}
+    },
+    {
+      "key": "BRK-B.pc_ratio_deviation",
+      "ticker": "BRK-B",
+      "category": "options",
+      "severity": "info",
+      "title": "BRK-B: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.80 vs its own 10-day average of 1.82.",
+      "value": 0.795872838817624,
+      "ctx": {}
+    },
+    {
+      "key": "BRK-B.iv_rank_high",
+      "ticker": "BRK-B",
+      "category": "options",
+      "severity": "info",
+      "title": "BRK-B: IV rank extreme (high)",
+      "detail": "IV rank is 87 (60 days of history) -- premium is rich relative to its own recent range.",
+      "value": 86.89505165851004,
+      "ctx": {}
+    },
+    {
+      "key": "COIN.pc_ratio_deviation",
+      "ticker": "COIN",
+      "category": "options",
+      "severity": "info",
+      "title": "COIN: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.48 vs its own 10-day average of 1.35.",
+      "value": 0.47617638354542763,
+      "ctx": {}
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261120P00430000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261120P00430000 (~30d tenor): volume 4,598 vs open interest 499 -- new positioning, not just today's expiring weekly noise.",
+      "value": 4598,
+      "ctx": {
+        "strike": 430.0,
+        "expiration": 1795132800
+      }
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261120P00425000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261120P00425000 (~30d tenor): volume 1,142 vs open interest 160 -- new positioning, not just today's expiring weekly noise.",
+      "value": 1142,
+      "ctx": {
+        "strike": 425.0,
+        "expiration": 1795132800
+      }
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261120P00358000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261120P00358000 (~30d tenor): volume 1,126 vs open interest 294 -- new positioning, not just today's expiring weekly noise.",
+      "value": 1126,
+      "ctx": {
+        "strike": 358.0,
+        "expiration": 1795132800
+      }
+    },
+    {
+      "key": "GLD.pc_ratio_deviation",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "info",
+      "title": "GLD: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 1.98 vs its own 10-day average of 1.02.",
+      "value": 1.983876050420168,
+      "ctx": {}
+    },
+    {
+      "key": "GOOGL.unusual_activity.GOOGL261120P00275000",
+      "ticker": "GOOGL",
+      "category": "options",
+      "severity": "warn",
+      "title": "GOOGL: unusual options activity",
+      "detail": "GOOGL261120P00275000 (~30d tenor): volume 10,207 vs open interest 2,222 -- new positioning, not just today's expiring weekly noise.",
+      "value": 10207,
+      "ctx": {
+        "strike": 275.0,
+        "expiration": 1795132800
+      }
+    },
+    {
+      "key": "GOOGL.unusual_activity.GOOGL261120P00280000",
+      "ticker": "GOOGL",
+      "category": "options",
+      "severity": "warn",
+      "title": "GOOGL: unusual options activity",
+      "detail": "GOOGL261120P00280000 (~30d tenor): volume 8,246 vs open interest 2,664 -- new positioning, not just today's expiring weekly noise.",
+      "value": 8246,
+      "ctx": {
+        "strike": 280.0,
+        "expiration": 1795132800
+      }
+    },
+    {
+      "key": "GOOGL.unusual_activity.GOOGL261120P00225000",
+      "ticker": "GOOGL",
+      "category": "options",
+      "severity": "warn",
+      "title": "GOOGL: unusual options activity",
+      "detail": "GOOGL261120P00225000 (~30d tenor): volume 1,271 vs open interest 210 -- new positioning, not just today's expiring weekly noise.",
+      "value": 1271,
+      "ctx": {
+        "strike": 225.0,
+        "expiration": 1795132800
+      }
+    },
+    {
+      "key": "GOOGL.pc_ratio_deviation",
+      "ticker": "GOOGL",
+      "category": "options",
+      "severity": "info",
+      "title": "GOOGL: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 1.11 vs its own 10-day average of 0.51.",
+      "value": 1.1102897852054208,
+      "ctx": {}
+    },
+    {
+      "key": "GOOGL.iv_rank_high",
+      "ticker": "GOOGL",
+      "category": "options",
+      "severity": "info",
+      "title": "GOOGL: IV rank extreme (high)",
+      "detail": "IV rank is 90 (60 days of history) -- premium is rich relative to its own recent range.",
+      "value": 89.63984499658079,
+      "ctx": {}
+    },
+    {
+      "key": "JPM.pc_ratio_deviation",
+      "ticker": "JPM",
+      "category": "options",
+      "severity": "info",
+      "title": "JPM: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.24 vs its own 10-day average of 0.78.",
+      "value": 0.24096153846153845,
+      "ctx": {}
+    },
+    {
+      "key": "NOW.pc_ratio_deviation",
+      "ticker": "NOW",
+      "category": "options",
+      "severity": "info",
+      "title": "NOW: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.46 vs its own 10-day average of 1.11.",
+      "value": 0.4604943563366195,
+      "ctx": {}
+    },
+    {
+      "key": "SPCX.pc_ratio_deviation",
+      "ticker": "SPCX",
+      "category": "options",
+      "severity": "info",
+      "title": "SPCX: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 1.87 vs its own 10-day average of 1.08.",
+      "value": 1.8744574158127365,
+      "ctx": {}
+    },
+    {
+      "key": "TSLA.iv_rank_high",
+      "ticker": "TSLA",
+      "category": "options",
+      "severity": "info",
+      "title": "TSLA: IV rank extreme (high)",
+      "detail": "IV rank is 88 (60 days of history) -- premium is rich relative to its own recent range.",
+      "value": 88.23566280162957,
+      "ctx": {}
+    }
+  ],
+  "posted": [
+    "AAPL.new_52w_high",
+    "AAPL.unusual_activity.AAPL261120P00360000",
+    "GLD.unusual_activity.GLD261120P00430000",
+    "GLD.unusual_activity.GLD261120P00358000",
+    "GOOGL.unusual_activity.GOOGL261120P00275000",
+    "GOOGL.unusual_activity.GOOGL261120P00280000",
+    "GOOGL.unusual_activity.GOOGL261120P00225000",
+    "NOW.pc_ratio_deviation",
+    "SPCX.pc_ratio_deviation"
+  ],
+  "scan_errors": [
+    "NUGT: request failed -- HTTP Error 404: Not Found",
+    "SOXL: request failed -- HTTP Error 404: Not Found"
+  ],
+  "tickers_scanned": [
+    "AAPL",
+    "AMZN",
+    "BMNR",
+    "BRK-B",
+    "COIN",
+    "GLD",
+    "GOOGL",
+    "JPM",
+    "MSFT",
+    "NOW",
+    "NVDA",
+    "SNOW",
+    "SPCX",
+    "TSLA"
+  ]
+}
