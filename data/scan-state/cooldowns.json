@@ -36,7 +36,7 @@
   "BMNR.skew_inverted": "2026-10-20",
   "BRK-B.golden_cross": "2026-07-29",
   "BRK-B.iv_rank_high": "2026-10-20",
-  "GOOGL.term_structure_backwardation": "2026-10-07",
+  "GOOGL.term_structure_backwardation": "2026-10-23",
   "GOOGL.insider_cluster.31": "2026-07-29",
   "JPM.term_structure_backwardation": "2026-10-10",
   "MSFT.iv_rank_high": "2026-07-29",
@@ -68,7 +68,7 @@
   "AMZN.rsi_overbought": "2026-08-03",
   "AMZN.new_52w_high": "2026-08-03",
   "AMZN.unusual_activity.AMZN260904P00260000": "2026-08-03",
-  "BMNR.pc_ratio_deviation": "2026-10-16",
+  "BMNR.pc_ratio_deviation": "2026-10-23",
   "COIN.pc_ratio_deviation": "2026-10-20",
   "GLD.unusual_activity.GLD260904C00405000": "2026-08-03",
   "GLD.unusual_activity.GLD260904P00350000": "2026-08-03",
@@ -80,7 +80,7 @@
   "NVDA.unusual_activity.NVDA260904C00170000": "2026-08-03",
   "NVDA.unusual_activity.NVDA260904C00180000": "2026-08-03",
   "NVDA.pc_ratio_deviation": "2026-10-10",
-  "SNOW.pc_ratio_deviation": "2026-10-10",
+  "SNOW.pc_ratio_deviation": "2026-10-23",
   "SPCX.unusual_activity.SPCX260904C00111000": "2026-08-03",
   "SPCX.unusual_activity.SPCX260904C00110000": "2026-08-03",
   "SPCX.pc_ratio_deviation": "2026-10-22",
@@ -354,5 +354,7 @@
   "GLD.unusual_activity.GLD261120P00358000": "2026-10-22",
   "GOOGL.unusual_activity.GOOGL261120P00275000": "2026-10-22",
   "GOOGL.unusual_activity.GOOGL261120P00280000": "2026-10-22",
-  "GOOGL.unusual_activity.GOOGL261120P00225000": "2026-10-22"
+  "GOOGL.unusual_activity.GOOGL261120P00225000": "2026-10-22",
+  "GLD.unusual_activity.GLD261120C00365000": "2026-10-23",
+  "NVDA.unusual_activity.NVDA261120P00265000": "2026-10-23"
 }
