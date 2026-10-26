@@ -168,6 +168,7 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 export const api = {
+  companySignals: (ticker: string) => getJson<{ findings: { key: string; ticker: string; category: string; severity: "critical" | "warn" | "info"; title: string; detail: string }[]; errors: string[] }>(`/companies/${encodeURIComponent(ticker)}/signals`),
   search: (q: string) => getJson<{ results: TickerResult[] }>(`/search?q=${encodeURIComponent(q)}`),
   companyProfile: (ticker: string) => getJson<CompanyProfile>(`/companies/${ticker}`),
   companyFinancials: (ticker: string) => getJson<FinancialsResponse>(`/companies/${ticker}/financials`),

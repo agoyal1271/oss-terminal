@@ -244,6 +244,16 @@ def internal_scan(ticker: str, secret: str | None = None):
     return detect_signals.scan_ticker(row["ticker"])
 
 
+@router.get("/companies/{ticker}/signals")
+def company_signals(ticker: str):
+    """Read-only on-demand scan; never publishes Slack or updates daily state."""
+    if not ticker or len(ticker) > 10 or not all(c.isalnum() or c in '.-' for c in ticker):
+        raise HTTPException(status_code=400, detail="Invalid ticker")
+    row = _resolve_market_or_404(ticker.upper())
+    result = detect_signals.scan_ticker(row["ticker"], fresh=True)
+    return {"findings": result["findings"], "errors": result["errors"]}
+
+
 @router.get("/filings/highlights")
 def filing_highlights(url: str, form: str, items: str | None = None):
     item_list = [x.strip() for x in items.split(",")] if items else []

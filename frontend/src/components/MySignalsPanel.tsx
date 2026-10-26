@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { api } from "../api/client";
 
 type Severity = "critical" | "warn" | "info";
 
@@ -49,6 +50,9 @@ export function MySignalsPanel() {
   const [input, setInput] = useState("");
   const [snapshot, setSnapshot] = useState<ScanSnapshot | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const syncStarted = useRef(false);
+  const [syncedAt, setSyncedAt] = useState<string | null>(null);
 
   useEffect(() => {
     setRules(readRules());
@@ -57,9 +61,34 @@ export function MySignalsPanel() {
         if (!res.ok) throw new Error("Daily scan is unavailable");
         return res.json() as Promise<ScanSnapshot>;
       })
-      .then(setSnapshot)
-      .catch(() => setScanError("Daily scan will appear after the next scheduled run."));
+      .then((data) => { if (!syncStarted.current) setSnapshot(data); })
+      .catch(() => { if (!syncStarted.current) setScanError("Daily scan will appear after the next scheduled run."); });
   }, []);
+
+  async function syncSignals() {
+    if (syncing || !rules.length) return;
+    syncStarted.current = true;
+    setSyncing(true);
+    setScanError(null);
+    const findings: Finding[] = [];
+    const failed: string[] = [];
+    try {
+      for (const rule of rules) {
+        try {
+          const result = await api.companySignals(rule.ticker);
+          findings.push(...result.findings);
+          if (result.errors.length) failed.push(rule.ticker);
+        } catch {
+          failed.push(rule.ticker);
+        }
+      }
+      setSnapshot({ date: new Date().toISOString().slice(0, 10), findings });
+      setSyncedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+      if (failed.length) setScanError(`Incomplete scan for ${failed.join(", ")}. Try Sync again.`);
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   const saveRules = (next: AlertRule[]) => {
     setRules(next);
@@ -89,7 +118,12 @@ export function MySignalsPanel() {
           <h2 id="my-signals-title">My Signals</h2>
           <p>Saved locally in this browser. Shared GLD and BMNR scan findings are also highlighted in Slack.</p>
         </div>
-        {snapshot && <span className="scan-date">Latest scan: {snapshot.date}</span>}
+        <div className="signal-sync-controls">
+          {snapshot && <span className="scan-date">{syncedAt ? `Checked at ${syncedAt}` : `Latest scan: ${snapshot.date}`}</span>}
+          <button className="secondary-btn" onClick={syncSignals} disabled={syncing || !rules.length} aria-busy={syncing}>
+            {syncing ? "Syncing..." : "Sync"}
+          </button>
+        </div>
       </div>
 
       <div className="signal-rule-grid">
@@ -128,8 +162,8 @@ export function MySignalsPanel() {
           <h3>Recent options and event signals</h3>
           <span>Daily scanner: technical, options, and SEC events</span>
         </div>
-        {scanError && <p className="signal-empty">{scanError}</p>}
-        {snapshot && matchingFindings.length === 0 && <p className="signal-empty">No matching alerts in the latest scan. That is a quiet read, not a buy or sell signal.</p>}
+        {scanError && <p className="signal-empty" role="status">{scanError}</p>}
+        {!scanError && !syncing && snapshot && matchingFindings.length === 0 && <p className="signal-empty">No matching alerts in the latest scan.</p>}
         {matchingFindings.slice(0, 8).map((finding) => (
           <article className={`signal-event ${finding.severity}`} key={finding.key}>
             <div className="event-meta"><span>{finding.ticker}</span><span>{finding.category}</span><span>{finding.severity}</span></div>

@@ -69,9 +69,9 @@ def _load_iv_history_tail(ticker: str) -> dict | None:
     return history[-1] if isinstance(history, list) and history else None
 
 
-def _scan_technicals(ticker: str, findings: list[dict], errors: list[str]) -> None:
+def _scan_technicals(ticker: str, findings: list[dict], errors: list[str], fresh: bool = False) -> None:
     try:
-        price_history = prices_ingest.get_price_history(ticker, range_key="2y")
+        price_history = prices_ingest.get_price_history(ticker, range_key="2y", fresh=fresh)
         tech = compute_technical_read(price_history["points"])
     except (UpstreamError, ValueError) as exc:
         errors.append(f"prices: {exc}")
@@ -137,7 +137,7 @@ def _scan_technicals(ticker: str, findings: list[dict], errors: list[str]) -> No
         ))
 
 
-def _scan_options(ticker: str, prior: dict, today_state: dict, findings: list[dict], errors: list[str]) -> None:
+def _scan_options(ticker: str, prior: dict, today_state: dict, findings: list[dict], errors: list[str], fresh: bool = False) -> None:
     # Deliberately scan the ~30-day-tenor chain, not the nearest expiration.
     # Found by testing against real data: the nearest chain is often a
     # same-week expiring weekly, where volume dwarfing open interest is the
@@ -148,11 +148,11 @@ def _scan_options(ticker: str, prior: dict, today_state: dict, findings: list[di
     # tenor is also more comparable day-to-day, same reasoning as
     # closest_expiration_to_days()'s use in get_iv_snapshot.
     try:
-        nearest = options_ingest.get_options_chain(ticker)
+        nearest = options_ingest.get_options_chain(ticker, fresh=fresh)
         target_expiration = options_ingest.closest_expiration_to_days(nearest["expiration_dates"], 30)
         chain = (
             nearest if target_expiration is None or target_expiration == nearest["selected_expiration"]
-            else options_ingest.get_options_chain(ticker, target_expiration)
+            else options_ingest.get_options_chain(ticker, target_expiration, fresh=fresh)
         )
     except (UpstreamError, ValueError) as exc:
         errors.append(f"options chain: {exc}")
@@ -318,7 +318,7 @@ def _scan_filings(ticker: str, findings: list[dict], errors: list[str]) -> None:
         errors.append(f"Form 4 filings: {exc}")
 
 
-def scan_ticker(ticker: str) -> dict:
+def scan_ticker(ticker: str, fresh: bool = False) -> dict:
     """Full scan for one ticker. Returns:
     {ticker, findings: [...], today_state: {...}, errors: [...]}
 
@@ -335,8 +335,8 @@ def scan_ticker(ticker: str) -> dict:
     prior = _load_prior_state(ticker)
     today_state: dict = {"date": datetime.date.today().isoformat()}
 
-    _scan_technicals(ticker, findings, errors)
-    _scan_options(ticker, prior, today_state, findings, errors)
+    _scan_technicals(ticker, findings, errors, fresh=fresh)
+    _scan_options(ticker, prior, today_state, findings, errors, fresh=fresh)
     _scan_filings(ticker, findings, errors)
 
     return {"ticker": ticker, "findings": findings, "today_state": today_state, "errors": errors}
