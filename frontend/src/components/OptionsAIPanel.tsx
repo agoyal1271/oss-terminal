@@ -9,7 +9,7 @@ type CopyStatus = "idle" | "copied" | "error";
 
 const GEMINI_URL = "https://gemini.google.com/app";
 
-async function loadOptionsPrompt(ticker: string, chain: OptionsChain, companyName: string): Promise<string> {
+export async function loadOptionsPrompt(ticker: string, chain: OptionsChain, companyName: string): Promise<string> {
   const s = chain.summary;
   const daysToExpiry = Math.round((chain.selected_expiration * 1000 - Date.now()) / 86_400_000);
   const topByVolume = (contracts: OptionsChain["calls"]) =>
