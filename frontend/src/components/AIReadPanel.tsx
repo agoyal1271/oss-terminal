@@ -19,7 +19,7 @@ function buildPrompt(
 ): string {
   const lines: string[] = [
     `You are a research assistant summarizing publicly reported data about ${companyName} (${ticker}) for a retail investor.`,
-    `Explain fundamentals, technical trend, momentum, volume, volatility, options, conflicting signals and data limitations in concise sections. Distinguish facts from conditional scenarios.`,
+    `Answer in at most 120 words and 4 short bullets. Lead with what to watch or wait for next, then the strongest 2-3 figures and what would change the view. Include the price-bar date inline. No data-limitations section, generic disclaimer or indicator-by-indicator recap. Mention missing evidence only if it materially prevents answering.`,
     `RULES (do not break these, even if it feels natural to): Do not give buy/sell advice, price targets, or a recommendation. Do not mention or invent options Greeks (Delta, Gamma, Theta, Vega), analyst ratings, or any figure not explicitly listed below -- if something isn't listed, say it's not available rather than estimating or inventing it. Describe only what the data below shows.`,
     ``,
     `DATA:`,
@@ -58,7 +58,7 @@ async function loadPrompt(ticker: string, companyName: string): Promise<string> 
   const [financials, ownership, options, evidence] = await Promise.all([
     api.companyFinancials(ticker).catch(() => null),
     api.companyOwnership(ticker).catch(() => null),
-    api.companyOptions(ticker).catch(() => null),
+    api.companyOptions(ticker, undefined, true).catch(() => null),
     loadAnalysisEvidence(ticker),
   ]);
   const latest = [...(financials?.annual ?? [])].sort((a, b) => b.fy - a.fy)[0];

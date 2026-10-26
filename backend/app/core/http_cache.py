@@ -55,6 +55,7 @@ def cached_get_json(
     headers: dict[str, str] | None = None,
     params: dict[str, Any] | None = None,
     timeout: float = 15.0,
+    allow_stale: bool = True,
 ) -> Any:
     """GET a URL and cache the parsed JSON response on disk for `ttl` seconds."""
     cache_key = url + ("?" + json.dumps(params, sort_keys=True) if params else "")
@@ -70,7 +71,7 @@ def cached_get_json(
         data = resp.json()
     except (httpx.HTTPError, json.JSONDecodeError) as exc:
         # Serve stale cache rather than fail hard, if we have anything at all.
-        if path.exists():
+        if allow_stale and path.exists():
             try:
                 stale = json.loads(path.read_text())
                 return stale.get("data")
@@ -113,7 +114,7 @@ def cached_get_text(
     return text
 
 
-def cached_call_json(namespace: str, key: str, ttl: int, fetch_fn: Callable[[], Any]) -> Any:
+def cached_call_json(namespace: str, key: str, ttl: int, fetch_fn: Callable[[], Any], allow_stale: bool = True) -> Any:
     """Cache the result of an arbitrary fetch callable, for sources (like
     Yahoo's options endpoint) that need custom auth/retry logic beyond a
     plain GET -- `fetch_fn` does its own HTTP work and returns JSON-ready data.
@@ -127,7 +128,7 @@ def cached_call_json(namespace: str, key: str, ttl: int, fetch_fn: Callable[[], 
     try:
         data = fetch_fn()
     except httpx.HTTPError as exc:
-        if path.exists():
+        if allow_stale and path.exists():
             try:
                 stale = json.loads(path.read_text())
                 return stale.get("data")

@@ -126,6 +126,7 @@ export interface OptionsSummary {
 }
 
 export interface OptionsChain {
+  quote_timestamp?: number | null;
   symbol: string;
   underlying_price: number | null;
   expiration_dates: number[];
@@ -170,7 +171,7 @@ export const api = {
   search: (q: string) => getJson<{ results: TickerResult[] }>(`/search?q=${encodeURIComponent(q)}`),
   companyProfile: (ticker: string) => getJson<CompanyProfile>(`/companies/${ticker}`),
   companyFinancials: (ticker: string) => getJson<FinancialsResponse>(`/companies/${ticker}/financials`),
-  companyPrices: (ticker: string, range: string) => getJson<PriceHistory>(`/companies/${ticker}/prices?range=${range}`),
+  companyPrices: (ticker: string, range: string, fresh = false) => getJson<PriceHistory>(`/companies/${ticker}/prices?range=${range}&fresh=${fresh}`),
   companyFilings: (ticker: string, limit = 15, forms?: string[]) => {
     const formsParam = forms && forms.length ? `&forms=${encodeURIComponent(forms.join(","))}` : "";
     return getJson<{ filings: Filing[] }>(`/companies/${ticker}/filings?limit=${limit}${formsParam}`);
@@ -180,8 +181,8 @@ export const api = {
     const itemsParam = items.length ? `&items=${encodeURIComponent(items.join(","))}` : "";
     return getJson<FilingHighlights>(`/filings/highlights?url=${encodeURIComponent(documentUrl)}&form=${encodeURIComponent(form)}${itemsParam}`);
   },
-  companyOptions: (ticker: string, expiration?: number) => {
-    const param = expiration ? `?expiration=${expiration}` : "";
+  companyOptions: (ticker: string, expiration?: number, fresh = false) => {
+    const param = `?fresh=${fresh}${expiration ? `&expiration=${expiration}` : ""}`;
     return getJson<OptionsChain>(`/companies/${ticker}/options${param}`);
   },
   companyOptionsTermStructure: (ticker: string) => getJson<TermStructure>(`/companies/${ticker}/options/term-structure`),

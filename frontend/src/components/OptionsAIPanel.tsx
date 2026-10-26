@@ -10,6 +10,10 @@ type CopyStatus = "idle" | "copied" | "error";
 const GEMINI_URL = "https://gemini.google.com/app";
 
 export async function loadOptionsPrompt(ticker: string, chain: OptionsChain, companyName: string): Promise<string> {
+  chain = await api.companyOptions(ticker, chain.selected_expiration, true);
+  if (!chain.quote_timestamp || Date.now() - chain.quote_timestamp * 1000 > 4 * 86400000) {
+    throw new Error("Current market data could not be verified. Please retry later.");
+  }
   const s = chain.summary;
   const daysToExpiry = Math.round((chain.selected_expiration * 1000 - Date.now()) / 86_400_000);
   const topByVolume = (contracts: OptionsChain["calls"]) =>
@@ -23,7 +27,7 @@ export async function loadOptionsPrompt(ticker: string, chain: OptionsChain, com
 
   const lines = [
     `You are a research assistant describing the options market for ${companyName} for a retail investor.`,
-    `Explain the technical trend, momentum, volume, volatility, options positioning, conflicting evidence and data limitations in concise sections. Distinguish facts from conditional scenarios.`,
+    `Answer in at most 120 words and 4 short bullets. Lead with the practical takeaway: what to watch or wait for next. Include only the strongest 2-3 supporting figures and a condition that would change the view. Include the price-bar date inline. No introduction, data-limitations section, generic disclaimer or indicator-by-indicator recap. If a missing fact materially prevents answering, state that in one short sentence.`,
     `RULES (do not break these, even if it feels natural to): Do not give buy/sell advice or recommend a specific options strategy (no "buy calls", "long call", "bear put spread", "collar", or similar) -- describe only what the data shows. Do not mention or invent options Greeks (Delta, Gamma, Theta, Vega) or any bid/ask price -- none are provided below and you must not make them up. Use ONLY the numbers listed in DATA below; if something isn't listed, say it's not available rather than estimating or inventing it.`,
     ``,
     `DATA (expiration in ~${daysToExpiry} days, underlying price $${chain.underlying_price}):`,
@@ -35,7 +39,7 @@ export async function loadOptionsPrompt(ticker: string, chain: OptionsChain, com
     termStructure ? `- IV term structure (across upcoming expirations): ${describeTermStructure(termStructure.points).summary}` : `- IV term structure: unavailable`,
     `- Highest-volume calls: ${topByVolume(chain.calls) || "none"}`,
     `- Highest-volume puts: ${topByVolume(chain.puts) || "none"}`,
-    `- Selected expiration (UTC date): ${new Date(chain.selected_expiration * 1000).toISOString().slice(0, 10)}. This chain is the displayed page snapshot; its fetch time is unknown.`,
+    `- Selected expiration (UTC date): ${new Date(chain.selected_expiration * 1000).toISOString().slice(0, 10)}; underlying quote timestamp: ${new Date(chain.quote_timestamp * 1000).toISOString()}. Chain refreshed for this analysis; individual contracts can trade less recently.`,
     `- Raw term-structure values (IV expressed as fractions): ${termStructure ? JSON.stringify(termStructure.points) : "unavailable"}`,
     evidence,
     ``,

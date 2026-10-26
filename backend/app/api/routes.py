@@ -146,10 +146,10 @@ def company_financials(ticker: str):
 
 
 @router.get("/companies/{ticker}/prices")
-def company_prices(ticker: str, range: str = Query("1y", alias="range")):
+def company_prices(ticker: str, range: str = Query("1y", alias="range"), fresh: bool = False):
     _resolve_market_or_404(ticker)  # SEC OR Yahoo -- price data itself is Yahoo either way
     try:
-        return prices_ingest.get_price_history(ticker, range_key=range)
+        return prices_ingest.get_price_history(ticker, range_key=range, fresh=fresh)
     except UpstreamError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except ValueError as exc:
@@ -177,10 +177,10 @@ def company_ownership(ticker: str):
 
 
 @router.get("/companies/{ticker}/options")
-def company_options(ticker: str, expiration: int | None = None):
+def company_options(ticker: str, expiration: int | None = None, fresh: bool = False):
     row = _resolve_market_or_404(ticker)
     try:
-        return options_ingest.get_options_chain(row["ticker"], expiration)
+        return options_ingest.get_options_chain(row["ticker"], expiration, fresh=fresh)
     except UpstreamError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
     except ValueError as exc:

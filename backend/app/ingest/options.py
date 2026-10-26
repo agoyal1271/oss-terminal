@@ -88,12 +88,13 @@ def _normalize_contract(c: dict) -> dict:
     }
 
 
-def get_options_chain(ticker: str, expiration: int | None = None) -> dict:
+def get_options_chain(ticker: str, expiration: int | None = None, fresh: bool = False) -> dict:
     cache_key = f"{ticker}:{expiration or 'nearest'}"
     data = cached_call_json(
         namespace="yahoo_options",
         key=cache_key,
-        ttl=10 * 60,
+        ttl=0 if fresh else 10 * 60,
+        allow_stale=not fresh,
         fetch_fn=lambda: _fetch_chain_json(ticker, expiration),
     )
 
@@ -122,6 +123,7 @@ def get_options_chain(ticker: str, expiration: int | None = None) -> dict:
     return {
         "symbol": r.get("underlyingSymbol", ticker.upper()),
         "underlying_price": underlying_price,
+        "quote_timestamp": (r.get("quote") or {}).get("regularMarketTime"),
         "expiration_dates": r.get("expirationDates", []),
         "selected_expiration": options_block.get("expirationDate"),
         "calls": calls,

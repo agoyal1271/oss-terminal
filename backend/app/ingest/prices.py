@@ -61,14 +61,15 @@ def resolve_via_yahoo(ticker: str) -> dict | None:
     }
 
 
-def get_price_history(ticker: str, range_key: str = "1y") -> dict:
+def get_price_history(ticker: str, range_key: str = "1y", fresh: bool = False) -> dict:
     yahoo_range, interval = RANGE_MAP.get(range_key, RANGE_MAP["1y"])
     url = CHART_URL.format(symbol=ticker.upper())
 
     data = cached_get_json(
         namespace="yahoo_prices",
         url=url,
-        ttl=settings.ttl_prices,
+        ttl=0 if fresh else settings.ttl_prices,
+        allow_stale=not fresh,
         headers={"User-Agent": "Mozilla/5.0 (compatible; OSS-Terminal/0.1)"},
         params={"range": yahoo_range, "interval": interval},
     )
@@ -108,6 +109,7 @@ def get_price_history(ticker: str, range_key: str = "1y") -> dict:
         "currency": meta.get("currency"),
         "exchange": meta.get("exchangeName"),
         "regular_market_price": meta.get("regularMarketPrice"),
+        "quote_timestamp": meta.get("regularMarketTime"),
         "fifty_two_week_high": meta.get("fiftyTwoWeekHigh"),
         "fifty_two_week_low": meta.get("fiftyTwoWeekLow"),
         "points": points,
