@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api, type OptionsChain } from "../api/client";
 import { describeSkew, describeTermStructure } from "../optionsAnalysis";
 import { generateWithOllama, listOllamaModels } from "../localLlm";
+import { loadAnalysisEvidence } from "../analysisEvidence";
 
 type Status = "idle" | "working" | "done" | "unreachable";
 type CopyStatus = "idle" | "copied" | "error";
@@ -12,14 +13,17 @@ async function loadOptionsPrompt(ticker: string, chain: OptionsChain, companyNam
   const s = chain.summary;
   const daysToExpiry = Math.round((chain.selected_expiration * 1000 - Date.now()) / 86_400_000);
   const topByVolume = (contracts: OptionsChain["calls"]) =>
-    [...contracts].sort((a, b) => b.volume - a.volume).slice(0, 3).map((c) => `strike $${c.strike} (vol ${c.volume}, OI ${c.open_interest}, IV ${((c.implied_volatility ?? 0) * 100).toFixed(0)}%)`).join("; ");
+    [...contracts].sort((a, b) => b.volume - a.volume).slice(0, 3).map((c) => `strike $${c.strike} (vol ${c.volume}, OI ${c.open_interest}, IV ${c.implied_volatility == null ? "unavailable" : (c.implied_volatility * 100).toFixed(2) + "%"})`).join("; ");
 
   const skew = describeSkew(chain);
-  const termStructure = await api.companyOptionsTermStructure(ticker).catch(() => null);
+  const [termStructure, evidence] = await Promise.all([
+    api.companyOptionsTermStructure(ticker).catch(() => null),
+    loadAnalysisEvidence(ticker),
+  ]);
 
   const lines = [
     `You are a research assistant describing the options market for ${companyName} for a retail investor.`,
-    `Write 5-7 plain-English sentences on what this options activity implies (sentiment lean, expected volatility, term structure shape, skew, notable positioning).`,
+    `Explain the technical trend, momentum, volume, volatility, options positioning, conflicting evidence and data limitations in concise sections. Distinguish facts from conditional scenarios.`,
     `RULES (do not break these, even if it feels natural to): Do not give buy/sell advice or recommend a specific options strategy (no "buy calls", "long call", "bear put spread", "collar", or similar) -- describe only what the data shows. Do not mention or invent options Greeks (Delta, Gamma, Theta, Vega) or any bid/ask price -- none are provided below and you must not make them up. Use ONLY the numbers listed in DATA below; if something isn't listed, say it's not available rather than estimating or inventing it.`,
     ``,
     `DATA (expiration in ~${daysToExpiry} days, underlying price $${chain.underlying_price}):`,
@@ -31,6 +35,9 @@ async function loadOptionsPrompt(ticker: string, chain: OptionsChain, companyNam
     termStructure ? `- IV term structure (across upcoming expirations): ${describeTermStructure(termStructure.points).summary}` : `- IV term structure: unavailable`,
     `- Highest-volume calls: ${topByVolume(chain.calls) || "none"}`,
     `- Highest-volume puts: ${topByVolume(chain.puts) || "none"}`,
+    `- Selected expiration (UTC date): ${new Date(chain.selected_expiration * 1000).toISOString().slice(0, 10)}. This chain is the displayed page snapshot; its fetch time is unknown.`,
+    `- Raw term-structure values (IV expressed as fractions): ${termStructure ? JSON.stringify(termStructure.points) : "unavailable"}`,
+    evidence,
     ``,
     `Reminder before you answer: no buy/sell advice, no options strategies, no invented Greeks or prices -- only the numbers listed above.`,
   ];

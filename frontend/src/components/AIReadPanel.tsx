@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { api, type AnnualRow, type OptionsChain, type OwnershipData } from "../api/client";
-import { computeTechnicalRead, type TechnicalRead } from "../technicals";
+import { type TechnicalRead } from "../technicals";
 import { generateWithOllama, listOllamaModels } from "../localLlm";
+import { loadAnalysisEvidence } from "../analysisEvidence";
 
 type Status = "idle" | "working" | "done" | "unreachable" | "error";
 type CopyStatus = "idle" | "copying" | "copied" | "error";
@@ -18,7 +19,7 @@ function buildPrompt(
 ): string {
   const lines: string[] = [
     `You are a research assistant summarizing publicly reported data about ${companyName} (${ticker}) for a retail investor.`,
-    `Write 4-6 plain-English sentences covering both supportive and concerning signals in the data below.`,
+    `Explain fundamentals, technical trend, momentum, volume, volatility, options, conflicting signals and data limitations in concise sections. Distinguish facts from conditional scenarios.`,
     `RULES (do not break these, even if it feels natural to): Do not give buy/sell advice, price targets, or a recommendation. Do not mention or invent options Greeks (Delta, Gamma, Theta, Vega), analyst ratings, or any figure not explicitly listed below -- if something isn't listed, say it's not available rather than estimating or inventing it. Describe only what the data below shows.`,
     ``,
     `DATA:`,
@@ -54,15 +55,17 @@ function buildPrompt(
 }
 
 async function loadPrompt(ticker: string, companyName: string): Promise<string> {
-  const [financials, prices, ownership, options] = await Promise.all([
-    api.companyFinancials(ticker),
-    api.companyPrices(ticker, "2y"),
+  const [financials, ownership, options, evidence] = await Promise.all([
+    api.companyFinancials(ticker).catch(() => null),
     api.companyOwnership(ticker).catch(() => null),
     api.companyOptions(ticker).catch(() => null),
+    loadAnalysisEvidence(ticker),
   ]);
-  const latest = [...financials.annual].sort((a, b) => b.fy - a.fy)[0];
-  const tech = computeTechnicalRead(prices.points);
-  return buildPrompt(companyName, ticker, latest, tech, ownership, options);
+  const latest = [...(financials?.annual ?? [])].sort((a, b) => b.fy - a.fy)[0];
+  return [buildPrompt(companyName, ticker, latest, null, ownership, options),
+    `Financial reporting period: ${latest?.fiscal_year_end ?? "unavailable"}; filed: ${latest?.filed ?? "unavailable"}.`,
+    `Ownership methodology: ${ownership?.method_note ?? "unavailable"}. Holder count is not ownership percentage.`,
+    `Options coverage: ${options ? "nearest available expiration" : "unavailable"}.`, evidence].join("\n");
 }
 
 export function AIReadPanel({ ticker, companyName }: { ticker: string; companyName: string }) {
