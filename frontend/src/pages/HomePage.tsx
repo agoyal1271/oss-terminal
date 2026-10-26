@@ -1,7 +1,8 @@
 import { SearchBar } from "../components/SearchBar";
 import { useNavigate } from "react-router-dom";
+import { MySignalsPanel } from "../components/MySignalsPanel";
 
-const POPULAR = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "JPM", "BRK-B"];
+const POPULAR = ["GLD", "BMNR", "AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA"];
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -28,6 +29,7 @@ export function HomePage() {
           <li>Prices — Yahoo Finance (delayed, unofficial)</li>
         </ul>
       </div>
+      <MySignalsPanel />
     </div>
   );
 }

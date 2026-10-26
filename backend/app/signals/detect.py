@@ -251,7 +251,8 @@ def _scan_options(ticker: str, prior: dict, today_state: dict, findings: list[di
 def _scan_filings(ticker: str, findings: list[dict], errors: list[str]) -> None:
     row = tickers_ingest.resolve(ticker)
     if not row:
-        errors.append("filings: ticker not found in SEC universe")
+        # ETFs and other market-only symbols have no SEC operating-company
+        # filing record. This is expected, not a scanner failure.
         return
 
     today_iso = datetime.date.today().isoformat()

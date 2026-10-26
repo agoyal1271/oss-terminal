@@ -238,7 +238,9 @@ def internal_scan(ticker: str, secret: str | None = None):
     app/signals/detect.py for the full transition logic."""
     if settings.iv_snapshot_secret and secret != settings.iv_snapshot_secret:
         raise HTTPException(status_code=403, detail="invalid or missing secret")
-    row = _resolve_or_404(ticker)
+    # The scanner also covers ETFs such as GLD. Market-only symbols have
+    # price/options signals; detect.py simply omits SEC-only filing checks.
+    row = _resolve_market_or_404(ticker)
     return detect_signals.scan_ticker(row["ticker"])
 
 

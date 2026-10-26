@@ -26,7 +26,7 @@ CRUMB_URL = "https://query1.finance.yahoo.com/v1/test/getcrumb"
 # universe daily isn't realistic (Yahoo would rate-limit/block it, and
 # almost none of it would ever be looked at); this keeps the job bounded
 # and pointed at what's actually used. Extend by adding to this list.
-IV_WATCHLIST = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "JPM", "BRK-B"]
+IV_WATCHLIST = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "JPM", "BRK-B", "GLD", "BMNR"]
 COOKIE_SEED_URL = "https://fc.yahoo.com"
 YAHOO_UA = "Mozilla/5.0 (compatible; OSS-Terminal/0.1)"
 

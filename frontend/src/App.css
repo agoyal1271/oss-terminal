@@ -152,6 +152,46 @@
   line-height: 1.7;
 }
 
+/* --- personal signal dashboard --- */
+.my-signals {
+  margin: 72px auto 0;
+  max-width: 900px;
+  text-align: left;
+  border-top: 1px solid var(--border);
+  padding-top: 32px;
+}
+.my-signals-heading, .event-heading, .signal-rule > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+}
+.eyebrow { color: var(--series-1); font-size: 11px; font-weight: 700; letter-spacing: .08em; margin: 0 0 6px; text-transform: uppercase; }
+.my-signals h2 { margin: 0; font-size: 28px; }
+.my-signals-heading p:not(.eyebrow) { color: var(--text-secondary); margin: 8px 0 0; max-width: 560px; }
+.scan-date, .event-heading span { color: var(--text-muted); font-size: 12px; white-space: nowrap; }
+.signal-rule-grid { display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 24px 0 30px; }
+.signal-rule, .add-rule, .signal-event { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+.signal-rule strong { font-size: 17px; }
+.signal-rule a { font-size: 12px; }
+.signal-rule label { display: grid; color: var(--text-muted); font-size: 11px; gap: 5px; margin: 14px 0 8px; text-transform: uppercase; }
+.signal-rule select, .add-rule input { background: var(--page-plane); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); padding: 7px; }
+.remove-rule { background: transparent; border: 0; color: var(--text-muted); cursor: pointer; font-size: 12px; padding: 0; }
+.remove-rule:hover { color: var(--danger); }
+.add-rule { display: grid; align-content: center; gap: 8px; }
+.add-rule button { background: var(--series-1); border: 0; border-radius: 6px; color: white; cursor: pointer; font-weight: 600; padding: 8px; }
+.signal-events { display: grid; gap: 10px; }
+.event-heading { margin-bottom: 2px; }
+.event-heading h3 { margin: 0; font-size: 16px; }
+.signal-event { border-left-width: 4px; }
+.signal-event.critical { border-left-color: var(--danger); }
+.signal-event.warn { border-left-color: #d99000; }
+.signal-event.info { border-left-color: var(--series-1); }
+.event-meta { color: var(--text-muted); display: flex; font-size: 11px; gap: 9px; margin-bottom: 6px; text-transform: uppercase; }
+.signal-event p, .signal-empty { color: var(--text-secondary); font-size: 13px; line-height: 1.5; margin: 6px 0 0; }
+.signal-empty { background: var(--surface-1); border: 1px dashed var(--border); border-radius: 8px; padding: 14px; }
+@media (max-width: 700px) { .signal-rule-grid { grid-template-columns: 1fr; } .my-signals-heading, .event-heading { align-items: flex-start; flex-direction: column; } }
+
 /* --- company page --- */
 .page-content {
   padding-top: 4px;

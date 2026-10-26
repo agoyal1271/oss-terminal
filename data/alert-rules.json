@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "channel": "equity-alerts",
+  "rules": [
+    {
+      "ticker": "GLD",
+      "enabled": true,
+      "min_severity": "info",
+      "categories": ["technical", "options"]
+    },
+    {
+      "ticker": "BMNR",
+      "enabled": true,
+      "min_severity": "info",
+      "categories": ["technical", "options", "filing"]
+    }
+  ]
+}

@@ -43,13 +43,14 @@ SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL", "")
 # Watchlisting a ticker that can never succeed would just be a permanent
 # phantom failure in the daily digest -- the exact kind of noise this
 # scanner exists to avoid.
-BASE_WATCHLIST = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "JPM", "BRK-B", "BMNR", "COIN"]
+BASE_WATCHLIST = ["AAPL", "MSFT", "NVDA", "GOOGL", "AMZN", "TSLA", "JPM", "BRK-B", "GLD", "BMNR", "COIN"]
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCANS_DIR = REPO_ROOT / "data" / "scans"
 SCAN_STATE_DIR = REPO_ROOT / "data" / "scan-state"
 COOLDOWN_PATH = SCAN_STATE_DIR / "cooldowns.json"
 WATCHLIST_PATH = REPO_ROOT / "data" / "watchlist.json"
+ALERT_RULES_PATH = REPO_ROOT / "data" / "alert-rules.json"
 
 
 def load_watchlist() -> list[str]:
@@ -112,6 +113,32 @@ def load_json(path: Path, default):
     return json.loads(path.read_text()) if path.exists() else default
 
 
+def load_alert_rules() -> list[dict]:
+    """Shared, versioned subscriptions. They do not suppress the baseline
+    scanner; they mark findings that must be highlighted in Slack and the UI.
+    Personal browser rules live in localStorage and remain private."""
+    try:
+        payload = load_json(ALERT_RULES_PATH, {})
+        return [r for r in payload.get("rules", []) if r.get("enabled", True)]
+    except (json.JSONDecodeError, AttributeError):
+        return []
+
+
+def subscribed_findings(findings: list[dict], rules: list[dict]) -> list[dict]:
+    rank = {"critical": 0, "warn": 1, "info": 2}
+    matched: list[dict] = []
+    for finding in findings:
+        for rule in rules:
+            if finding.get("ticker") != str(rule.get("ticker", "")).upper():
+                continue
+            if finding.get("category") not in rule.get("categories", ["technical", "options", "filing"]):
+                continue
+            if rank.get(finding.get("severity"), 9) <= rank.get(rule.get("min_severity", "info"), 2):
+                matched.append(finding)
+                break
+    return matched
+
+
 def apply_cooldown(findings: list[dict], cooldowns: dict, today: datetime.date, force: bool) -> tuple[list[dict], dict]:
     """Every finding still gets recorded in the day's file regardless of
     cooldown (that's the full audit trail) -- cooldown only gates what
@@ -149,7 +176,7 @@ def collect_weekly_info_roundup(today: datetime.date) -> list[dict]:
     return list(roundup.values())
 
 
-def format_digest(to_post: list[dict], scan_errors: list[str], today: datetime.date) -> str:
+def format_digest(to_post: list[dict], subscribed: list[dict], scan_errors: list[str], today: datetime.date) -> str:
     lines = [f"*Daily equity/options scan — {today.isoformat()}*"]
 
     if not to_post:
@@ -160,6 +187,11 @@ def format_digest(to_post: list[dict], scan_errors: list[str], today: datetime.d
             lines.append(f"{SEV_EMOJI.get(f['severity'], '')} *{f['title']}*\n{f['detail']}")
         if len(to_post) > MAX_FINDINGS_POSTED:
             lines.append(f"…and {len(to_post) - MAX_FINDINGS_POSTED} more.")
+
+    if subscribed:
+        lines.append("\n*My Signals (tracked symbols)*")
+        for f in subscribed[:10]:
+            lines.append(f"{SEV_EMOJI.get(f['severity'], '')} *{f['ticker']}* — {f['title']}")
 
     if today.weekday() == 4:  # Friday
         roundup = collect_weekly_info_roundup(today)
@@ -212,8 +244,9 @@ def main() -> None:
     cooldowns = load_json(COOLDOWN_PATH, {})
     to_post, updated_cooldowns = apply_cooldown(all_findings, cooldowns, today, force)
     to_post.sort(key=lambda f: SEV_RANK.get(f["severity"], 3))
+    subscribed = subscribed_findings(all_findings, load_alert_rules())
 
-    digest = format_digest(to_post, scan_errors, today)
+    digest = format_digest(to_post, subscribed, scan_errors, today)
     print(digest)
     print(f"\n[{len(today_states)}/{len(WATCHLIST)} tickers scanned, {len(all_findings)} total findings, {len(to_post)} posted, {len(scan_errors)} sub-failures]")
 
@@ -227,6 +260,7 @@ def main() -> None:
     day_record = {
         "date": today.isoformat(),
         "findings": all_findings,
+        "subscribed_findings": subscribed,
         "posted": [f["key"] for f in to_post],
         "scan_errors": scan_errors,
         "tickers_scanned": sorted(today_states.keys()),
