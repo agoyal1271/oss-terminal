@@ -1,0 +1,11 @@
+[
+  {
+    "ticker": "BMNR",
+    "date": "2026-10-27",
+    "expiration": 1795737600,
+    "underlying_price": 20.95,
+    "atm_strike": 21.0,
+    "call_iv": 0.7460962890625,
+    "put_iv": 0.6835969140625001
+  }
+]

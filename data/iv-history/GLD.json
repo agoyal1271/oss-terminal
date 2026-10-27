@@ -1,0 +1,11 @@
+[
+  {
+    "ticker": "GLD",
+    "date": "2026-10-27",
+    "expiration": 1795737600,
+    "underlying_price": 367.82,
+    "atm_strike": 368.0,
+    "call_iv": 0.22412885253906245,
+    "put_iv": 0.19702951416015624
+  }
+]
