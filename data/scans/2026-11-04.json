@@ -1,0 +1,325 @@
+{
+  "date": "2026-11-04",
+  "findings": [
+    {
+      "key": "AAPL.unusual_activity.AAPL261204C00345000",
+      "ticker": "AAPL",
+      "category": "options",
+      "severity": "warn",
+      "title": "AAPL: unusual options activity",
+      "detail": "AAPL261204C00345000 (~30d tenor): volume 2,528 vs open interest 231 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2528,
+      "ctx": {
+        "strike": 345.0,
+        "expiration": 1796342400
+      }
+    },
+    {
+      "key": "AAPL.unusual_activity.AAPL261204P00290000",
+      "ticker": "AAPL",
+      "category": "options",
+      "severity": "warn",
+      "title": "AAPL: unusual options activity",
+      "detail": "AAPL261204P00290000 (~30d tenor): volume 1,852 vs open interest 270 -- new positioning, not just today's expiring weekly noise.",
+      "value": 1852,
+      "ctx": {
+        "strike": 290.0,
+        "expiration": 1796342400
+      }
+    },
+    {
+      "key": "AAPL.iv_rank_high",
+      "ticker": "AAPL",
+      "category": "options",
+      "severity": "info",
+      "title": "AAPL: IV rank extreme (high)",
+      "detail": "IV rank is 100 (68 days of history) -- premium is rich relative to its own recent range.",
+      "value": 100.0,
+      "ctx": {}
+    },
+    {
+      "key": "BMNR.pc_ratio_deviation",
+      "ticker": "BMNR",
+      "category": "options",
+      "severity": "info",
+      "title": "BMNR: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.27 vs its own 10-day average of 0.60.",
+      "value": 0.2739018087855297,
+      "ctx": {}
+    },
+    {
+      "key": "BMNR.iv_rank_high",
+      "ticker": "BMNR",
+      "category": "options",
+      "severity": "info",
+      "title": "BMNR: IV rank extreme (high)",
+      "detail": "IV rank is 100 (6 days of history) -- premium is rich relative to its own recent range.",
+      "value": 100.0,
+      "ctx": {}
+    },
+    {
+      "key": "BRK-B.pc_ratio_deviation",
+      "ticker": "BRK-B",
+      "category": "options",
+      "severity": "info",
+      "title": "BRK-B: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 3.60 vs its own 10-day average of 1.37.",
+      "value": 3.5987261146496814,
+      "ctx": {}
+    },
+    {
+      "key": "BRK-B.iv_rank_high",
+      "ticker": "BRK-B",
+      "category": "options",
+      "severity": "info",
+      "title": "BRK-B: IV rank extreme (high)",
+      "detail": "IV rank is 100 (68 days of history) -- premium is rich relative to its own recent range.",
+      "value": 100.0,
+      "ctx": {}
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261204C00395000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261204C00395000 (~30d tenor): volume 2,012 vs open interest 54 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2012,
+      "ctx": {
+        "strike": 395.0,
+        "expiration": 1796342400
+      }
+    },
+    {
+      "key": "GLD.pc_ratio_deviation",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "info",
+      "title": "GLD: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.18 vs its own 10-day average of 0.79.",
+      "value": 0.18490326673009833,
+      "ctx": {}
+    },
+    {
+      "key": "GLD.term_structure_backwardation",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1793750400 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1793750400
+      }
+    },
+    {
+      "key": "GOOGL.pc_ratio_deviation",
+      "ticker": "GOOGL",
+      "category": "options",
+      "severity": "info",
+      "title": "GOOGL: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.22 vs its own 10-day average of 0.66.",
+      "value": 0.21715749039692703,
+      "ctx": {}
+    },
+    {
+      "key": "GOOGL.term_structure_backwardation",
+      "ticker": "GOOGL",
+      "category": "options",
+      "severity": "warn",
+      "title": "GOOGL: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1793923200 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1793923200
+      }
+    },
+    {
+      "key": "JPM.iv_rank_high",
+      "ticker": "JPM",
+      "category": "options",
+      "severity": "info",
+      "title": "JPM: IV rank extreme (high)",
+      "detail": "IV rank is 82 (68 days of history) -- premium is rich relative to its own recent range.",
+      "value": 82.154543166373,
+      "ctx": {}
+    },
+    {
+      "key": "MSFT.unusual_activity.MSFT261204C00590000",
+      "ticker": "MSFT",
+      "category": "options",
+      "severity": "warn",
+      "title": "MSFT: unusual options activity",
+      "detail": "MSFT261204C00590000 (~30d tenor): volume 5,098 vs open interest 63 -- new positioning, not just today's expiring weekly noise.",
+      "value": 5098,
+      "ctx": {
+        "strike": 590.0,
+        "expiration": 1796342400
+      }
+    },
+    {
+      "key": "MSFT.pc_ratio_deviation",
+      "ticker": "MSFT",
+      "category": "options",
+      "severity": "info",
+      "title": "MSFT: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.15 vs its own 10-day average of 0.87.",
+      "value": 0.15323626928066889,
+      "ctx": {}
+    },
+    {
+      "key": "MSFT.term_structure_backwardation",
+      "ticker": "MSFT",
+      "category": "options",
+      "severity": "warn",
+      "title": "MSFT: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1793923200 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1793923200
+      }
+    },
+    {
+      "key": "NVDA.iv_rank_high",
+      "ticker": "NVDA",
+      "category": "options",
+      "severity": "info",
+      "title": "NVDA: IV rank extreme (high)",
+      "detail": "IV rank is 100 (68 days of history) -- premium is rich relative to its own recent range.",
+      "value": 100.0,
+      "ctx": {}
+    },
+    {
+      "key": "SOXL.unusual_activity.SOXL261204C00140000",
+      "ticker": "SOXL",
+      "category": "options",
+      "severity": "warn",
+      "title": "SOXL: unusual options activity",
+      "detail": "SOXL261204C00140000 (~30d tenor): volume 1,294 vs open interest 402 -- new positioning, not just today's expiring weekly noise.",
+      "value": 1294,
+      "ctx": {
+        "strike": 140.0,
+        "expiration": 1796342400
+      }
+    },
+    {
+      "key": "SOXL.pc_ratio_deviation",
+      "ticker": "SOXL",
+      "category": "options",
+      "severity": "info",
+      "title": "SOXL: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.44 vs its own 6-day average of 1.30.",
+      "value": 0.44271595900439237,
+      "ctx": {}
+    },
+    {
+      "key": "TSLA.pc_ratio_deviation",
+      "ticker": "TSLA",
+      "category": "options",
+      "severity": "info",
+      "title": "TSLA: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.42 vs its own 10-day average of 0.86.",
+      "value": 0.42486779311234363,
+      "ctx": {}
+    },
+    {
+      "key": "TSLA.iv_rank_high",
+      "ticker": "TSLA",
+      "category": "options",
+      "severity": "info",
+      "title": "TSLA: IV rank extreme (high)",
+      "detail": "IV rank is 93 (68 days of history) -- premium is rich relative to its own recent range.",
+      "value": 93.29363835788153,
+      "ctx": {}
+    }
+  ],
+  "subscribed_findings": [
+    {
+      "key": "BMNR.pc_ratio_deviation",
+      "ticker": "BMNR",
+      "category": "options",
+      "severity": "info",
+      "title": "BMNR: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.27 vs its own 10-day average of 0.60.",
+      "value": 0.2739018087855297,
+      "ctx": {}
+    },
+    {
+      "key": "BMNR.iv_rank_high",
+      "ticker": "BMNR",
+      "category": "options",
+      "severity": "info",
+      "title": "BMNR: IV rank extreme (high)",
+      "detail": "IV rank is 100 (6 days of history) -- premium is rich relative to its own recent range.",
+      "value": 100.0,
+      "ctx": {}
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261204C00395000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261204C00395000 (~30d tenor): volume 2,012 vs open interest 54 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2012,
+      "ctx": {
+        "strike": 395.0,
+        "expiration": 1796342400
+      }
+    },
+    {
+      "key": "GLD.pc_ratio_deviation",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "info",
+      "title": "GLD: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.18 vs its own 10-day average of 0.79.",
+      "value": 0.18490326673009833,
+      "ctx": {}
+    },
+    {
+      "key": "GLD.term_structure_backwardation",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1793750400 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1793750400
+      }
+    }
+  ],
+  "posted": [
+    "AAPL.unusual_activity.AAPL261204C00345000",
+    "AAPL.unusual_activity.AAPL261204P00290000",
+    "GLD.unusual_activity.GLD261204C00395000",
+    "GLD.term_structure_backwardation",
+    "GOOGL.term_structure_backwardation",
+    "MSFT.unusual_activity.MSFT261204C00590000",
+    "MSFT.term_structure_backwardation",
+    "SOXL.unusual_activity.SOXL261204C00140000",
+    "GLD.pc_ratio_deviation",
+    "GOOGL.pc_ratio_deviation",
+    "MSFT.pc_ratio_deviation"
+  ],
+  "scan_errors": [],
+  "tickers_scanned": [
+    "AAPL",
+    "AMZN",
+    "BMNR",
+    "BRK-B",
+    "COIN",
+    "GLD",
+    "GOOGL",
+    "JPM",
+    "MSFT",
+    "NOW",
+    "NUGT",
+    "NVDA",
+    "SNOW",
+    "SOXL",
+    "SPCX",
+    "TSLA"
+  ]
+}
