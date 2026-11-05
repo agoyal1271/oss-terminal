@@ -61,5 +61,14 @@
     "atm_strike": 21.0,
     "call_iv": 0.7949239257812499,
     "put_iv": 0.7597680273437502
+  },
+  {
+    "ticker": "BMNR",
+    "date": "2026-11-05",
+    "expiration": 1796342400,
+    "underlying_price": 21.73,
+    "atm_strike": 22.0,
+    "call_iv": 0.7597680273437502,
+    "put_iv": 0.7460962890625
   }
 ]
