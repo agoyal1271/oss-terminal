@@ -1,27 +1,55 @@
 {
-  "date": "2026-11-12",
+  "date": "2026-11-13",
   "findings": [
+    {
+      "key": "AAPL.new_52w_high",
+      "ticker": "AAPL",
+      "category": "technical",
+      "severity": "warn",
+      "title": "AAPL: new 52-week high",
+      "detail": "Closed at 355.63, above the prior 52-week high of 355.38.",
+      "value": 355.6300048828125,
+      "ctx": {}
+    },
     {
       "key": "AAPL.pc_ratio_deviation",
       "ticker": "AAPL",
       "category": "options",
       "severity": "info",
       "title": "AAPL: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.76 vs its own 10-day average of 1.52.",
-      "value": 0.756534090909091,
+      "detail": "Put/call volume ratio is 0.32 vs its own 10-day average of 1.44.",
+      "value": 0.31729721314027715,
       "ctx": {}
     },
     {
-      "key": "GLD.term_structure_backwardation",
-      "ticker": "GLD",
+      "key": "BMNR.pc_ratio_deviation",
+      "ticker": "BMNR",
       "category": "options",
+      "severity": "info",
+      "title": "BMNR: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.40 vs its own 10-day average of 0.93.",
+      "value": 0.4028716216216216,
+      "ctx": {}
+    },
+    {
+      "key": "BRK-B.new_52w_high",
+      "ticker": "BRK-B",
+      "category": "technical",
       "severity": "warn",
-      "title": "GLD: IV term structure flipped into backwardation",
-      "detail": "IV spikes at expiration 1794528000 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
-      "value": null,
-      "ctx": {
-        "spike_expiration": 1794528000
-      }
+      "title": "BRK-B: new 52-week high",
+      "detail": "Closed at 588.24, above the prior 52-week high of 586.45.",
+      "value": 588.239990234375,
+      "ctx": {}
+    },
+    {
+      "key": "BRK-B.pc_ratio_deviation",
+      "ticker": "BRK-B",
+      "category": "options",
+      "severity": "info",
+      "title": "BRK-B: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 4.53 vs its own 10-day average of 2.57.",
+      "value": 4.526717557251908,
+      "ctx": {}
     },
     {
       "key": "GOOGL.volume_spike",
@@ -29,38 +57,40 @@
       "category": "technical",
       "severity": "info",
       "title": "GOOGL: volume spike",
-      "detail": "10-day average volume is 2.3x the prior 50-day baseline.",
-      "value": 2.262459555136288,
+      "detail": "10-day average volume is 2.0x the prior 50-day baseline.",
+      "value": 2.0400308122001722,
       "ctx": {}
     },
     {
-      "key": "JPM.iv_rank_high",
+      "key": "JPM.pc_ratio_deviation",
       "ticker": "JPM",
       "category": "options",
       "severity": "info",
-      "title": "JPM: IV rank extreme (high)",
-      "detail": "IV rank is 84 (74 days of history) -- premium is rich relative to its own recent range.",
-      "value": 84.49030958973069,
+      "title": "JPM: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.65 vs its own 10-day average of 1.45.",
+      "value": 0.6456953642384106,
       "ctx": {}
     },
     {
-      "key": "NOW.volume_spike",
-      "ticker": "NOW",
-      "category": "technical",
-      "severity": "info",
-      "title": "NOW: volume spike",
-      "detail": "10-day average volume is 2.0x the prior 50-day baseline.",
-      "value": 2.0116960215120745,
-      "ctx": {}
-    },
-    {
-      "key": "NOW.pc_ratio_deviation",
-      "ticker": "NOW",
+      "key": "JPM.term_structure_backwardation",
+      "ticker": "JPM",
       "category": "options",
+      "severity": "warn",
+      "title": "JPM: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1794528000 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1794528000
+      }
+    },
+    {
+      "key": "MSFT.insider_cluster.46",
+      "ticker": "MSFT",
+      "category": "filing",
       "severity": "info",
-      "title": "NOW: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.32 vs its own 10-day average of 0.76.",
-      "value": 0.31622602384655263,
+      "title": "MSFT: insider filing cluster",
+      "detail": "3 Form 4 filings in the last 5 days.",
+      "value": 3,
       "ctx": {}
     },
     {
@@ -79,32 +109,70 @@
       "category": "options",
       "severity": "info",
       "title": "NUGT: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.78 vs its own 10-day average of 0.29.",
-      "value": 0.775,
+      "detail": "Put/call volume ratio is 0.62 vs its own 10-day average of 0.36.",
+      "value": 0.6222222222222222,
       "ctx": {}
     },
     {
-      "key": "NVDA.unusual_activity.NVDA261211C00175000",
+      "key": "NUGT.term_structure_backwardation",
+      "ticker": "NUGT",
+      "category": "options",
+      "severity": "warn",
+      "title": "NUGT: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1794528000 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1794528000
+      }
+    },
+    {
+      "key": "NVDA.volume_spike",
+      "ticker": "NVDA",
+      "category": "technical",
+      "severity": "info",
+      "title": "NVDA: volume spike",
+      "detail": "10-day average volume is 2.0x the prior 50-day baseline.",
+      "value": 2.03106144130276,
+      "ctx": {}
+    },
+    {
+      "key": "NVDA.unusual_activity.NVDA261211P00100000",
       "ticker": "NVDA",
       "category": "options",
       "severity": "warn",
       "title": "NVDA: unusual options activity",
-      "detail": "NVDA261211C00175000 (~30d tenor): volume 6,368 vs open interest 1,814 -- new positioning, not just today's expiring weekly noise.",
-      "value": 6368,
+      "detail": "NVDA261211P00100000 (~30d tenor): volume 3,151 vs open interest 546 -- new positioning, not just today's expiring weekly noise.",
+      "value": 3151,
       "ctx": {
-        "strike": 175.0,
+        "strike": 100.0,
         "expiration": 1796947200
       }
     },
     {
-      "key": "NVDA.pc_ratio_deviation",
+      "key": "NVDA.unusual_activity.NVDA261211C00160000",
       "ticker": "NVDA",
       "category": "options",
-      "severity": "info",
-      "title": "NVDA: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.28 vs its own 10-day average of 0.58.",
-      "value": 0.27997706933341826,
-      "ctx": {}
+      "severity": "warn",
+      "title": "NVDA: unusual options activity",
+      "detail": "NVDA261211C00160000 (~30d tenor): volume 2,150 vs open interest 271 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2150,
+      "ctx": {
+        "strike": 160.0,
+        "expiration": 1796947200
+      }
+    },
+    {
+      "key": "NVDA.unusual_activity.NVDA261211P00125000",
+      "ticker": "NVDA",
+      "category": "options",
+      "severity": "warn",
+      "title": "NVDA: unusual options activity",
+      "detail": "NVDA261211P00125000 (~30d tenor): volume 1,754 vs open interest 358 -- new positioning, not just today's expiring weekly noise.",
+      "value": 1754,
+      "ctx": {
+        "strike": 125.0,
+        "expiration": 1796947200
+      }
     },
     {
       "key": "NVDA.iv_rank_high",
@@ -112,8 +180,18 @@
       "category": "options",
       "severity": "info",
       "title": "NVDA: IV rank extreme (high)",
-      "detail": "IV rank is 91 (74 days of history) -- premium is rich relative to its own recent range.",
-      "value": 91.22706422018346,
+      "detail": "IV rank is 86 (75 days of history) -- premium is rich relative to its own recent range.",
+      "value": 86.24331039755349,
+      "ctx": {}
+    },
+    {
+      "key": "SNOW.pc_ratio_deviation",
+      "ticker": "SNOW",
+      "category": "options",
+      "severity": "info",
+      "title": "SNOW: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.26 vs its own 10-day average of 1.14.",
+      "value": 0.2649164677804296,
       "ctx": {}
     },
     {
@@ -122,41 +200,41 @@
       "category": "technical",
       "severity": "info",
       "title": "SOXL: volume spike",
-      "detail": "10-day average volume is 3.2x the prior 50-day baseline.",
-      "value": 3.2327152680006876,
+      "detail": "10-day average volume is 3.4x the prior 50-day baseline.",
+      "value": 3.441945606634804,
       "ctx": {}
     },
     {
-      "key": "TSLA.unusual_activity.TSLA261211C00395000",
-      "ticker": "TSLA",
+      "key": "SOXL.unusual_activity.SOXL261211P00040000",
+      "ticker": "SOXL",
       "category": "options",
       "severity": "warn",
-      "title": "TSLA: unusual options activity",
-      "detail": "TSLA261211C00395000 (~30d tenor): volume 1,322 vs open interest 436 -- new positioning, not just today's expiring weekly noise.",
-      "value": 1322,
+      "title": "SOXL: unusual options activity",
+      "detail": "SOXL261211P00040000 (~30d tenor): volume 2,522 vs open interest 709 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2522,
       "ctx": {
-        "strike": 395.0,
+        "strike": 40.0,
         "expiration": 1796947200
       }
     },
     {
-      "key": "TSLA.iv_rank_high",
-      "ticker": "TSLA",
-      "category": "options",
-      "severity": "info",
-      "title": "TSLA: IV rank extreme (high)",
-      "detail": "IV rank is 81 (74 days of history) -- premium is rich relative to its own recent range.",
-      "value": 80.50888270547945,
-      "ctx": {}
-    }
-  ],
-  "subscribed_findings": [
-    {
-      "key": "GLD.term_structure_backwardation",
-      "ticker": "GLD",
+      "key": "SOXL.term_structure_backwardation",
+      "ticker": "SOXL",
       "category": "options",
       "severity": "warn",
-      "title": "GLD: IV term structure flipped into backwardation",
+      "title": "SOXL: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1795132800 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1795132800
+      }
+    },
+    {
+      "key": "SPCX.term_structure_backwardation",
+      "ticker": "SPCX",
+      "category": "options",
+      "severity": "warn",
+      "title": "SPCX: IV term structure flipped into backwardation",
       "detail": "IV spikes at expiration 1794528000 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
       "value": null,
       "ctx": {
@@ -164,10 +242,33 @@
       }
     }
   ],
+  "subscribed_findings": [
+    {
+      "key": "BMNR.pc_ratio_deviation",
+      "ticker": "BMNR",
+      "category": "options",
+      "severity": "info",
+      "title": "BMNR: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 0.40 vs its own 10-day average of 0.93.",
+      "value": 0.4028716216216216,
+      "ctx": {}
+    }
+  ],
   "posted": [
-    "NVDA.unusual_activity.NVDA261211C00175000",
-    "TSLA.unusual_activity.TSLA261211C00395000",
-    "NVDA.pc_ratio_deviation"
+    "AAPL.new_52w_high",
+    "BRK-B.new_52w_high",
+    "JPM.term_structure_backwardation",
+    "NVDA.unusual_activity.NVDA261211P00100000",
+    "NVDA.unusual_activity.NVDA261211C00160000",
+    "NVDA.unusual_activity.NVDA261211P00125000",
+    "SOXL.unusual_activity.SOXL261211P00040000",
+    "SOXL.term_structure_backwardation",
+    "SPCX.term_structure_backwardation",
+    "BMNR.pc_ratio_deviation",
+    "GOOGL.volume_spike",
+    "MSFT.insider_cluster.46",
+    "NVDA.volume_spike",
+    "SOXL.volume_spike"
   ],
   "scan_errors": [],
   "tickers_scanned": [
