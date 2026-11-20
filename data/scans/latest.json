@@ -1,24 +1,24 @@
 {
-  "date": "2026-11-19",
+  "date": "2026-11-20",
   "findings": [
+    {
+      "key": "AAPL.pc_ratio_deviation",
+      "ticker": "AAPL",
+      "category": "options",
+      "severity": "info",
+      "title": "AAPL: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 2.82 vs its own 10-day average of 1.57.",
+      "value": 2.815359024119767,
+      "ctx": {}
+    },
     {
       "key": "AAPL.iv_rank_high",
       "ticker": "AAPL",
       "category": "options",
       "severity": "info",
       "title": "AAPL: IV rank extreme (high)",
-      "detail": "IV rank is 85 (79 days of history) -- premium is rich relative to its own recent range.",
-      "value": 84.92956368616711,
-      "ctx": {}
-    },
-    {
-      "key": "AMZN.pc_ratio_deviation",
-      "ticker": "AMZN",
-      "category": "options",
-      "severity": "info",
-      "title": "AMZN: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.31 vs its own 10-day average of 0.62.",
-      "value": 0.3081512726223953,
+      "detail": "IV rank is 81 (80 days of history) -- premium is rich relative to its own recent range.",
+      "value": 80.91860692623753,
       "ctx": {}
     },
     {
@@ -32,17 +32,14 @@
       "ctx": {}
     },
     {
-      "key": "BMNR.unusual_activity.BMNR261218P00013000",
+      "key": "BMNR.rsi_oversold",
       "ticker": "BMNR",
-      "category": "options",
-      "severity": "warn",
-      "title": "BMNR: unusual options activity",
-      "detail": "BMNR261218P00013000 (~30d tenor): volume 1,572 vs open interest 199 -- new positioning, not just today's expiring weekly noise.",
-      "value": 1572,
-      "ctx": {
-        "strike": 13.0,
-        "expiration": 1797552000
-      }
+      "category": "technical",
+      "severity": "info",
+      "title": "BMNR: RSI crossed into oversold",
+      "detail": "RSI just crossed below 30 (now 30).",
+      "value": 29.59302964962346,
+      "ctx": {}
     },
     {
       "key": "BMNR.pc_ratio_deviation",
@@ -50,8 +47,8 @@
       "category": "options",
       "severity": "info",
       "title": "BMNR: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 1.84 vs its own 10-day average of 0.65.",
-      "value": 1.8438401318500206,
+      "detail": "Put/call volume ratio is 1.38 vs its own 10-day average of 0.79.",
+      "value": 1.3830242510699002,
       "ctx": {}
     },
     {
@@ -60,18 +57,8 @@
       "category": "options",
       "severity": "info",
       "title": "BMNR: IV rank extreme (high)",
-      "detail": "IV rank is 100 (17 days of history) -- premium is rich relative to its own recent range.",
+      "detail": "IV rank is 100 (18 days of history) -- premium is rich relative to its own recent range.",
       "value": 100.0,
-      "ctx": {}
-    },
-    {
-      "key": "BRK-B.iv_rank_high",
-      "ticker": "BRK-B",
-      "category": "options",
-      "severity": "info",
-      "title": "BRK-B: IV rank extreme (high)",
-      "detail": "IV rank is 89 (79 days of history) -- premium is rich relative to its own recent range.",
-      "value": 88.9113560759246,
       "ctx": {}
     },
     {
@@ -80,8 +67,8 @@
       "category": "filing",
       "severity": "info",
       "title": "BRK-B: insider filing cluster",
-      "detail": "3 Form 4 filings in the last 5 days.",
-      "value": 3,
+      "detail": "4 Form 4 filings in the last 5 days.",
+      "value": 4,
       "ctx": {}
     },
     {
@@ -90,18 +77,93 @@
       "category": "technical",
       "severity": "warn",
       "title": "COIN: new 52-week low",
-      "detail": "Closed at 115.02, below the prior 52-week low of 117.32.",
-      "value": 115.0199966430664,
+      "detail": "Closed at 110.51, below the prior 52-week low of 114.11.",
+      "value": 110.51000213623047,
       "ctx": {}
     },
     {
-      "key": "COIN.pc_ratio_deviation",
+      "key": "COIN.unusual_activity.COIN261218P00190000",
       "ticker": "COIN",
       "category": "options",
+      "severity": "warn",
+      "title": "COIN: unusual options activity",
+      "detail": "COIN261218P00190000 (~30d tenor): volume 2,100 vs open interest 421 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2100,
+      "ctx": {
+        "strike": 190.0,
+        "expiration": 1797552000
+      }
+    },
+    {
+      "key": "COIN.unusual_activity.COIN261218P00180000",
+      "ticker": "COIN",
+      "category": "options",
+      "severity": "warn",
+      "title": "COIN: unusual options activity",
+      "detail": "COIN261218P00180000 (~30d tenor): volume 1,220 vs open interest 375 -- new positioning, not just today's expiring weekly noise.",
+      "value": 1220,
+      "ctx": {
+        "strike": 180.0,
+        "expiration": 1797552000
+      }
+    },
+    {
+      "key": "GLD.new_52w_low",
+      "ticker": "GLD",
+      "category": "technical",
+      "severity": "warn",
+      "title": "GLD: new 52-week low",
+      "detail": "Closed at 341.19, below the prior 52-week low of 351.96.",
+      "value": 341.19000244140625,
+      "ctx": {}
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261218P00425000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261218P00425000 (~30d tenor): volume 4,540 vs open interest 1,387 -- new positioning, not just today's expiring weekly noise.",
+      "value": 4540,
+      "ctx": {
+        "strike": 425.0,
+        "expiration": 1797552000
+      }
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261218P00470000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261218P00470000 (~30d tenor): volume 3,700 vs open interest 751 -- new positioning, not just today's expiring weekly noise.",
+      "value": 3700,
+      "ctx": {
+        "strike": 470.0,
+        "expiration": 1797552000
+      }
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261218P00430000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261218P00430000 (~30d tenor): volume 2,120 vs open interest 500 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2120,
+      "ctx": {
+        "strike": 430.0,
+        "expiration": 1797552000
+      }
+    },
+    {
+      "key": "GLD.pc_ratio_deviation",
+      "ticker": "GLD",
+      "category": "options",
       "severity": "info",
-      "title": "COIN: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 0.73 vs its own 10-day average of 1.70.",
-      "value": 0.7293167218220752,
+      "title": "GLD: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 2.58 vs its own 10-day average of 1.16.",
+      "value": 2.5842119790229092,
       "ctx": {}
     },
     {
@@ -110,9 +172,21 @@
       "category": "options",
       "severity": "info",
       "title": "GLD: IV rank extreme (high)",
-      "detail": "IV rank is 98 (17 days of history) -- premium is rich relative to its own recent range.",
-      "value": 97.62232942798073,
+      "detail": "IV rank is 100 (18 days of history) -- premium is rich relative to its own recent range.",
+      "value": 100.0,
       "ctx": {}
+    },
+    {
+      "key": "GOOGL.term_structure_backwardation",
+      "ticker": "GOOGL",
+      "category": "options",
+      "severity": "warn",
+      "title": "GOOGL: IV term structure flipped into backwardation",
+      "detail": "IV spikes at expiration 1795132800 then falls back for later ones (backwardation) -- the market is pricing a specific event into that expiration, not a smooth increase in uncertainty over time.",
+      "value": null,
+      "ctx": {
+        "spike_expiration": 1795132800
+      }
     },
     {
       "key": "GOOGL.iv_rank_high",
@@ -120,8 +194,8 @@
       "category": "options",
       "severity": "info",
       "title": "GOOGL: IV rank extreme (high)",
-      "detail": "IV rank is 94 (79 days of history) -- premium is rich relative to its own recent range.",
-      "value": 94.16991369578676,
+      "detail": "IV rank is 87 (80 days of history) -- premium is rich relative to its own recent range.",
+      "value": 86.69021521430392,
       "ctx": {}
     },
     {
@@ -130,54 +204,18 @@
       "category": "options",
       "severity": "info",
       "title": "JPM: IV rank extreme (high)",
-      "detail": "IV rank is 88 (79 days of history) -- premium is rich relative to its own recent range.",
-      "value": 88.26579411024414,
+      "detail": "IV rank is 86 (80 days of history) -- premium is rich relative to its own recent range.",
+      "value": 86.29247420085578,
       "ctx": {}
     },
     {
-      "key": "MSFT.unusual_activity.MSFT261218C00185000",
+      "key": "MSFT.pc_ratio_deviation",
       "ticker": "MSFT",
       "category": "options",
-      "severity": "warn",
-      "title": "MSFT: unusual options activity",
-      "detail": "MSFT261218C00185000 (~30d tenor): volume 3,370 vs open interest 988 -- new positioning, not just today's expiring weekly noise.",
-      "value": 3370,
-      "ctx": {
-        "strike": 185.0,
-        "expiration": 1797552000
-      }
-    },
-    {
-      "key": "MSFT.unusual_activity.MSFT261218C00175000",
-      "ticker": "MSFT",
-      "category": "options",
-      "severity": "warn",
-      "title": "MSFT: unusual options activity",
-      "detail": "MSFT261218C00175000 (~30d tenor): volume 2,346 vs open interest 619 -- new positioning, not just today's expiring weekly noise.",
-      "value": 2346,
-      "ctx": {
-        "strike": 175.0,
-        "expiration": 1797552000
-      }
-    },
-    {
-      "key": "NOW.rsi_oversold",
-      "ticker": "NOW",
-      "category": "technical",
       "severity": "info",
-      "title": "NOW: RSI crossed into oversold",
-      "detail": "RSI just crossed below 30 (now 27).",
-      "value": 26.701054925502163,
-      "ctx": {}
-    },
-    {
-      "key": "NOW.pc_ratio_deviation",
-      "ticker": "NOW",
-      "category": "options",
-      "severity": "info",
-      "title": "NOW: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 3.16 vs its own 10-day average of 0.66.",
-      "value": 3.1559927983539096,
+      "title": "MSFT: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 1.10 vs its own 10-day average of 0.71.",
+      "value": 1.0955457150299557,
       "ctx": {}
     },
     {
@@ -186,8 +224,18 @@
       "category": "filing",
       "severity": "info",
       "title": "NOW: insider filing cluster",
-      "detail": "7 Form 4 filings in the last 5 days.",
-      "value": 7,
+      "detail": "12 Form 4 filings in the last 5 days.",
+      "value": 12,
+      "ctx": {}
+    },
+    {
+      "key": "NUGT.skew_inverted",
+      "ticker": "NUGT",
+      "category": "options",
+      "severity": "warn",
+      "title": "NUGT: IV skew flipped inverted",
+      "detail": "Call-side IV runs 11 points above put-side IV at the wings -- inverted skew (speculative upside chasing).",
+      "value": null,
       "ctx": {}
     },
     {
@@ -196,18 +244,44 @@
       "category": "technical",
       "severity": "info",
       "title": "NVDA: volume spike",
-      "detail": "10-day average volume is 3.2x the prior 50-day baseline.",
-      "value": 3.233088717866676,
+      "detail": "10-day average volume is 3.4x the prior 50-day baseline.",
+      "value": 3.391775792790199,
       "ctx": {}
     },
     {
-      "key": "NVDA.iv_rank_high",
+      "key": "NVDA.unusual_activity.NVDA261218P00235000",
       "ticker": "NVDA",
       "category": "options",
+      "severity": "warn",
+      "title": "NVDA: unusual options activity",
+      "detail": "NVDA261218P00235000 (~30d tenor): volume 3,595 vs open interest 706 -- new positioning, not just today's expiring weekly noise.",
+      "value": 3595,
+      "ctx": {
+        "strike": 235.0,
+        "expiration": 1797552000
+      }
+    },
+    {
+      "key": "NVDA.unusual_activity.NVDA261218P00240000",
+      "ticker": "NVDA",
+      "category": "options",
+      "severity": "warn",
+      "title": "NVDA: unusual options activity",
+      "detail": "NVDA261218P00240000 (~30d tenor): volume 2,229 vs open interest 425 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2229,
+      "ctx": {
+        "strike": 240.0,
+        "expiration": 1797552000
+      }
+    },
+    {
+      "key": "SNOW.pc_ratio_deviation",
+      "ticker": "SNOW",
+      "category": "options",
       "severity": "info",
-      "title": "NVDA: IV rank extreme (high)",
-      "detail": "IV rank is 100 (79 days of history) -- premium is rich relative to its own recent range.",
-      "value": 100.0,
+      "title": "SNOW: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 1.05 vs its own 10-day average of 0.59.",
+      "value": 1.0464037122969838,
       "ctx": {}
     },
     {
@@ -216,22 +290,19 @@
       "category": "technical",
       "severity": "info",
       "title": "SOXL: volume spike",
-      "detail": "10-day average volume is 3.4x the prior 50-day baseline.",
-      "value": 3.4402235119819164,
+      "detail": "10-day average volume is 3.2x the prior 50-day baseline.",
+      "value": 3.226133270445255,
       "ctx": {}
     },
     {
-      "key": "SOXL.unusual_activity.SOXL261218C00078000",
-      "ticker": "SOXL",
+      "key": "SPCX.pc_ratio_deviation",
+      "ticker": "SPCX",
       "category": "options",
-      "severity": "warn",
-      "title": "SOXL: unusual options activity",
-      "detail": "SOXL261218C00078000 (~30d tenor): volume 1,855 vs open interest 414 -- new positioning, not just today's expiring weekly noise.",
-      "value": 1855,
-      "ctx": {
-        "strike": 78.0,
-        "expiration": 1797552000
-      }
+      "severity": "info",
+      "title": "SPCX: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 1.21 vs its own 10-day average of 0.71.",
+      "value": 1.2149786400854397,
+      "ctx": {}
     },
     {
       "key": "TSLA.unusual_activity.TSLA261218P00630000",
@@ -265,24 +336,21 @@
       "category": "options",
       "severity": "info",
       "title": "TSLA: IV rank extreme (high)",
-      "detail": "IV rank is 90 (79 days of history) -- premium is rich relative to its own recent range.",
-      "value": 90.41898544520551,
+      "detail": "IV rank is 86 (80 days of history) -- premium is rich relative to its own recent range.",
+      "value": 85.85991010273972,
       "ctx": {}
     }
   ],
   "subscribed_findings": [
     {
-      "key": "BMNR.unusual_activity.BMNR261218P00013000",
+      "key": "BMNR.rsi_oversold",
       "ticker": "BMNR",
-      "category": "options",
-      "severity": "warn",
-      "title": "BMNR: unusual options activity",
-      "detail": "BMNR261218P00013000 (~30d tenor): volume 1,572 vs open interest 199 -- new positioning, not just today's expiring weekly noise.",
-      "value": 1572,
-      "ctx": {
-        "strike": 13.0,
-        "expiration": 1797552000
-      }
+      "category": "technical",
+      "severity": "info",
+      "title": "BMNR: RSI crossed into oversold",
+      "detail": "RSI just crossed below 30 (now 30).",
+      "value": 29.59302964962346,
+      "ctx": {}
     },
     {
       "key": "BMNR.pc_ratio_deviation",
@@ -290,8 +358,8 @@
       "category": "options",
       "severity": "info",
       "title": "BMNR: put/call ratio deviating from its own baseline",
-      "detail": "Put/call volume ratio is 1.84 vs its own 10-day average of 0.65.",
-      "value": 1.8438401318500206,
+      "detail": "Put/call volume ratio is 1.38 vs its own 10-day average of 0.79.",
+      "value": 1.3830242510699002,
       "ctx": {}
     },
     {
@@ -300,8 +368,67 @@
       "category": "options",
       "severity": "info",
       "title": "BMNR: IV rank extreme (high)",
-      "detail": "IV rank is 100 (17 days of history) -- premium is rich relative to its own recent range.",
+      "detail": "IV rank is 100 (18 days of history) -- premium is rich relative to its own recent range.",
       "value": 100.0,
+      "ctx": {}
+    },
+    {
+      "key": "GLD.new_52w_low",
+      "ticker": "GLD",
+      "category": "technical",
+      "severity": "warn",
+      "title": "GLD: new 52-week low",
+      "detail": "Closed at 341.19, below the prior 52-week low of 351.96.",
+      "value": 341.19000244140625,
+      "ctx": {}
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261218P00425000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261218P00425000 (~30d tenor): volume 4,540 vs open interest 1,387 -- new positioning, not just today's expiring weekly noise.",
+      "value": 4540,
+      "ctx": {
+        "strike": 425.0,
+        "expiration": 1797552000
+      }
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261218P00470000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261218P00470000 (~30d tenor): volume 3,700 vs open interest 751 -- new positioning, not just today's expiring weekly noise.",
+      "value": 3700,
+      "ctx": {
+        "strike": 470.0,
+        "expiration": 1797552000
+      }
+    },
+    {
+      "key": "GLD.unusual_activity.GLD261218P00430000",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "warn",
+      "title": "GLD: unusual options activity",
+      "detail": "GLD261218P00430000 (~30d tenor): volume 2,120 vs open interest 500 -- new positioning, not just today's expiring weekly noise.",
+      "value": 2120,
+      "ctx": {
+        "strike": 430.0,
+        "expiration": 1797552000
+      }
+    },
+    {
+      "key": "GLD.pc_ratio_deviation",
+      "ticker": "GLD",
+      "category": "options",
+      "severity": "info",
+      "title": "GLD: put/call ratio deviating from its own baseline",
+      "detail": "Put/call volume ratio is 2.58 vs its own 10-day average of 1.16.",
+      "value": 2.5842119790229092,
       "ctx": {}
     },
     {
@@ -310,19 +437,30 @@
       "category": "options",
       "severity": "info",
       "title": "GLD: IV rank extreme (high)",
-      "detail": "IV rank is 98 (17 days of history) -- premium is rich relative to its own recent range.",
-      "value": 97.62232942798073,
+      "detail": "IV rank is 100 (18 days of history) -- premium is rich relative to its own recent range.",
+      "value": 100.0,
       "ctx": {}
     }
   ],
   "posted": [
-    "BMNR.unusual_activity.BMNR261218P00013000",
-    "MSFT.unusual_activity.MSFT261218C00185000",
-    "MSFT.unusual_activity.MSFT261218C00175000",
-    "SOXL.unusual_activity.SOXL261218C00078000",
-    "AAPL.iv_rank_high",
-    "AMZN.pc_ratio_deviation",
-    "COIN.pc_ratio_deviation"
+    "COIN.new_52w_low",
+    "COIN.unusual_activity.COIN261218P00190000",
+    "COIN.unusual_activity.COIN261218P00180000",
+    "GLD.new_52w_low",
+    "GLD.unusual_activity.GLD261218P00425000",
+    "GLD.unusual_activity.GLD261218P00470000",
+    "GLD.unusual_activity.GLD261218P00430000",
+    "GOOGL.term_structure_backwardation",
+    "NUGT.skew_inverted",
+    "NVDA.unusual_activity.NVDA261218P00235000",
+    "NVDA.unusual_activity.NVDA261218P00240000",
+    "TSLA.unusual_activity.TSLA261218P00630000",
+    "TSLA.unusual_activity.TSLA261218P00610000",
+    "BMNR.rsi_oversold",
+    "BMNR.pc_ratio_deviation",
+    "NVDA.volume_spike",
+    "SOXL.volume_spike",
+    "SPCX.pc_ratio_deviation"
   ],
   "scan_errors": [],
   "tickers_scanned": [
