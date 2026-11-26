@@ -364,7 +364,7 @@
   "TSLA.unusual_activity.TSLA261127C00390000": "2026-10-27",
   "AMZN.unusual_activity.AMZN261127C00250000": "2026-10-28",
   "GOOGL.rsi_oversold": "2026-10-28",
-  "BMNR.iv_rank_high": "2026-11-18",
+  "BMNR.iv_rank_high": "2026-11-26",
   "COIN.golden_cross": "2026-10-29",
   "GLD.unusual_activity.GLD261127C00408000": "2026-10-29",
   "GLD.unusual_activity.GLD261127C00425000": "2026-10-29",
@@ -482,7 +482,7 @@
   "NVDA.unusual_activity.NVDA261224C00140000": "2026-11-21",
   "NVDA.unusual_activity.NVDA261224C00135000": "2026-11-21",
   "NVDA.unusual_activity.NVDA261224C00145000": "2026-11-21",
-  "TSLA.unusual_activity.TSLA261224C00360000": "2026-11-21",
+  "TSLA.unusual_activity.TSLA261224C00360000": "2026-11-26",
   "NOW.insider_cluster.48": "2026-11-24",
   "NVDA.unusual_activity.NVDA261224P00100000": "2026-11-24",
   "TSLA.unusual_activity.TSLA261224P00400000": "2026-11-24",
@@ -491,5 +491,8 @@
   "AMZN.insider_cluster.48": "2026-11-25",
   "COIN.insider_cluster.48": "2026-11-25",
   "JPM.unusual_activity.JPM261224C00335000": "2026-11-25",
-  "MSFT.unusual_activity.MSFT261224P00420000": "2026-11-25"
+  "MSFT.unusual_activity.MSFT261224P00420000": "2026-11-25",
+  "SOXL.unusual_activity.SOXL261224C00040000": "2026-11-26",
+  "SOXL.unusual_activity.SOXL261224C00030000": "2026-11-26",
+  "TSLA.unusual_activity.TSLA261224P00390000": "2026-11-26"
 }
